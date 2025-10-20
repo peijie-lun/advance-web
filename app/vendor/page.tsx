@@ -1,18 +1,80 @@
 'use client';
 
-import { Box, Container, Card, CardContent, Typography, Grid } from '@mui/material';
-import { blue, grey, indigo, teal } from '@mui/material/colors';
+import { useState } from 'react';
+import {
+  Box,
+  Container,
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  Fab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Stack,
+  TextField,
+  MenuItem,
+} from '@mui/material';
+import { grey, indigo, teal } from '@mui/material/colors';
 import BusinessIcon from '@mui/icons-material/Business';
+import AddIcon from '@mui/icons-material/Add';
 
 export default function VendorList() {
-  const vendors = [
+  const [vendors, setVendors] = useState([
     { id: 'VEN001', name: '華碩電腦股份有限公司', contact: '02-2894-3447', category: '電腦硬體' },
     { id: 'VEN002', name: '宏碁股份有限公司', contact: '02-8691-3000', category: '電腦設備' },
     { id: 'VEN003', name: '聯發科技股份有限公司', contact: '03-567-0766', category: '晶片供應' },
-  ];
+  ]);
+
+  const categories = ['電腦硬體', '電腦設備', '晶片供應'];
+
+  const [open, setOpen] = useState(false);
+  const [id, setId] = useState('');
+  const [name, setName] = useState('');
+  const [contact, setContact] = useState('');
+  const [category, setCategory] = useState('');
+  const [error, setError] = useState('');
+
+  // 處理電話格式自動加 "-" 並限制長度
+  const handleContactChange = (e) => {
+    let value = e.target.value.replace(/[^0-9]/g, ''); // 僅保留數字
+
+    // 加上 - 格式
+    if (value.length > 2 && value.length <= 6) {
+      value = value.replace(/(\d{2})(\d+)/, '$1-$2');
+    } else if (value.length > 6) {
+      value = value.replace(/(\d{2})(\d{4})(\d+)/, '$1-$2-$3');
+    }
+
+    // 限制最長長度為 12（包含 -）
+    if (value.length > 12) {
+      value = value.slice(0, 12);
+    }
+
+    setContact(value);
+  };
+
+  const handleAddVendor = () => {
+    if (!id || !name || !contact || !category) {
+      setError('請填寫所有欄位');
+      return;
+    }
+    const newVendor = { id, name, contact, category };
+    setVendors([...vendors, newVendor]);
+    setId('');
+    setName('');
+    setContact('');
+    setCategory('');
+    setError('');
+    setOpen(false);
+  };
 
   return (
     <Container sx={{ py: 6 }}>
+      {/* 頁面標題 */}
       <Box
         sx={{
           textAlign: 'center',
@@ -31,6 +93,7 @@ export default function VendorList() {
         </Typography>
       </Box>
 
+      {/* 廠商卡片 */}
       <Grid container spacing={3}>
         {vendors.map((vendor) => (
           <Grid item xs={12} md={6} lg={4} key={vendor.id}>
@@ -78,6 +141,73 @@ export default function VendorList() {
           </Grid>
         ))}
       </Grid>
+
+      {/* ➕ 浮動新增按鈕 */}
+      <Fab
+        color="primary"
+        sx={{ position: 'fixed', bottom: 32, right: 32, bgcolor: teal[500] }}
+        onClick={() => setOpen(true)}
+      >
+        <AddIcon />
+      </Fab>
+
+      {/* 🧾 Dialog：新增廠商表單 */}
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>新增廠商</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="廠商編號"
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              fullWidth
+              variant="outlined"
+            />
+            <TextField
+              label="廠商名稱"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              fullWidth
+              variant="outlined"
+            />
+            <TextField
+              label="聯絡電話"
+              value={contact}
+              onChange={handleContactChange}
+              fullWidth
+              variant="outlined"
+              placeholder="例：02-1234-5678"
+              inputProps={{ maxLength: 12 }}
+            />
+            <TextField
+              select
+              label="類別"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              fullWidth
+              variant="outlined"
+            >
+              {categories.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {error && (
+              <Typography color="error" sx={{ mt: 1 }}>
+                {error}
+              </Typography>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>取消</Button>
+          <Button variant="contained" onClick={handleAddVendor}>
+            新增
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
