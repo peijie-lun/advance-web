@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -20,30 +20,51 @@ import {
 import { grey, indigo, teal } from '@mui/material/colors';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import AddIcon from '@mui/icons-material/Add';
+import { createClient } from '@supabase/supabase-js';
 
+// ✅ 初始化 Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// ✅ 對應 Supabase 資料表欄位
 type Order = {
-  id: string;
-  item: string;
+  order_id: string;
+  custom_order_id: string;
+  product_name: string;
   amount: number;
 };
 
 export default function OrderList() {
-  const [orders, setOrders] = useState<Order[]>([
-    { id: 'ORD001', item: 'iPad', amount: 20000 },
-    { id: 'ORD002', item: 'iPhone 8', amount: 20000 },
-    { id: 'ORD003', item: 'iPhone X', amount: 30000 },
-  ]);
-
+  const [orders, setOrders] = useState<Order[]>([]);
   const [open, setOpen] = useState(false);
-  const [id, setId] = useState('');
   const [item, setItem] = useState('');
   const [amount, setAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  function handleAddOrder() {
+  // ✅ 抓取 Supabase 資料
+  useEffect(() => {
+    async function fetchOrders() {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching orders:', error.message);
+      } else {
+        setOrders(data as Order[]);
+      }
+    }
+    fetchOrders();
+  }, []);
+
+  // ✅ 新增訂單到 Supabase（含自動編號）
+  async function handleAddOrder() {
     setError(null);
-    if (!id.trim() || !item.trim()) {
-      setError('請輸入訂單編號與商品名稱');
+    if (!item.trim()) {
+      setError('請輸入商品名稱');
       return;
     }
     const amt = Number(amount);
@@ -51,17 +72,48 @@ export default function OrderList() {
       setError('金額需為大於 0 的數字');
       return;
     }
-    const newOrder: Order = { id: id.trim(), item: item.trim(), amount: amt };
-    setOrders((prev) => [newOrder, ...prev]);
-    setId('');
-    setItem('');
-    setAmount('');
-    setOpen(false);
+
+    // 1️⃣ 查詢目前最大 custom_order_id
+    const { data: existingOrders, error: fetchError } = await supabase
+      .from('orders')
+      .select('custom_order_id');
+
+    if (fetchError) {
+      setError(`查詢訂單編號失敗：${fetchError.message}`);
+      return;
+    }
+
+    const ids = existingOrders
+      .map((o) => o.custom_order_id)
+      .filter((id) => /^ORD\d+$/.test(id));
+    const maxNumber = Math.max(...ids.map((id) => parseInt(id.replace('ORD', ''))), 0);
+    const nextOrderId = `ORD${(maxNumber + 1).toString().padStart(3, '0')}`;
+
+    // 2️⃣ 插入新訂單
+    const newOrder = {
+      custom_order_id: nextOrderId,
+      product_name: item.trim(),
+      amount: amt,
+    };
+
+    const { data, error: insertError } = await supabase
+      .from('orders')
+      .insert([newOrder])
+      .select();
+
+    if (insertError) {
+      setError(`新增失敗：${insertError.message}`);
+    } else if (data) {
+      setOrders((prev) => [data[0] as Order, ...prev]);
+      setItem('');
+      setAmount('');
+      setOpen(false);
+    }
   }
 
   return (
     <Container sx={{ py: 6, position: 'relative' }}>
-      {/* 標題區塊（黑色背景） */}
+      {/* 標題區塊 */}
       <Box
         sx={{
           textAlign: 'center',
@@ -83,7 +135,7 @@ export default function OrderList() {
       {/* 訂單列表 */}
       <Grid container spacing={3}>
         {orders.map((order) => (
-          <Grid item xs={12} md={6} lg={4} key={order.id}>
+          <Grid item xs={12} md={6} lg={4} key={order.order_id}>
             <Card
               sx={{
                 borderRadius: 3,
@@ -99,7 +151,7 @@ export default function OrderList() {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <ShoppingBagIcon sx={{ color: teal[600], mr: 1 }} />
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    訂單編號：{order.id}
+                    訂單編號：{order.custom_order_id}
                   </Typography>
                 </Box>
 
@@ -107,7 +159,7 @@ export default function OrderList() {
                   variant="body1"
                   sx={{ color: indigo[800], fontWeight: 500, mb: 1 }}
                 >
-                  商品名稱：{order.item}
+                  商品名稱：{order.product_name}
                 </Typography>
 
                 <Typography
@@ -136,13 +188,6 @@ export default function OrderList() {
         <DialogTitle>新增訂單</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="訂單編號"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              fullWidth
-              variant="outlined"
-            />
             <TextField
               label="商品名稱"
               value={item}
@@ -174,4 +219,3 @@ export default function OrderList() {
     </Container>
   );
 }
-``
