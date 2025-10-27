@@ -1,71 +1,97 @@
 'use client';
-import { useState } from 'react';
-import Button from '@mui/material/Button';
-import { Card, CardActions, CardHeader, CardContent } from '@mui/material';
-import Container from '@mui/material/Container';
-import Typography from '@mui/material/Typography';
 
-// 可重用的卡片元件：固定五個欄位
-function InfoCard({ title, department, studentId, name, interest, specialty }) {
-  const [count, setCount] = useState(0);
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Container, Box, Button, Typography, Card, CardContent } from '@mui/material';
+import { green, grey } from '@mui/material/colors';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+
+const links = [
+  { href: '/order/orderlist', label: '訂單列表', icon: <ShoppingBagIcon /> },
+];
+
+export default function HomePage() {
+  const router = useRouter();
 
   return (
-    <Card sx={{ mb: 2 }}>
-      <CardHeader title={title} />
-      <CardContent>
-        <Typography variant="body1" sx={{ mb: 1 }}>
-          Count: {count}
+    <Container
+      maxWidth="sm"
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        bgcolor: green[50],
+        py: 8,
+      }}
+    >
+      {/* 標題區塊 */}
+      <Box sx={{ textAlign: 'center', mb: 5 }}>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 700, color: green[800], mb: 1 }}
+        >
+          🌱 歡迎回來！
         </Typography>
+        <Typography variant="body1" sx={{ color: grey[700] }}>
+          選擇功能開始使用吧
+        </Typography>
+      </Box>
 
-        <Typography variant="body2">系級：{department}</Typography>
-        <Typography variant="body2">學號：{studentId}</Typography>
-        <Typography variant="body2">姓名：{name}</Typography>
-        <Typography variant="body2">興趣：{interest}</Typography>
-        <Typography variant="body2">專長：{specialty}</Typography>
-      </CardContent>
+      {/* 功能列表卡片 */}
+      {links.map((link) => (
+        <Card
+          key={link.href}
+          sx={{
+            width: '100%',
+            borderRadius: 3,
+            mb: 2,
+            boxShadow: 4,
+            background: `linear-gradient(135deg, ${green[100]}, ${green[50]})`,
+            transition: 'all 0.25s ease',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: 8,
+            },
+          }}
+        >
+          <CardContent
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ color: green[700], mr: 1 }}>{link.icon}</Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: green[900] }}>
+                {link.label}
+              </Typography>
+            </Box>
 
-    </Card>
-  );
-}
-
-export default function StudentsPage() {
-  // 三張卡片（每張內容不同）
-  const students = [
-    {
-      title: '第一張卡片',
-      department: '資訊管理學系 三年級',
-      studentId: '412401056',
-      name: '陳姵潔',
-      interest: '聽歌 追劇 睡覺',
-      specialty: '目前沒想到',
-    },
-    {
-      title: '第二張卡片',
-      department: '資訊管理學系 五年級',
-      studentId: '410402549',
-      name: '林芃秀',
-      interest: '聽音樂、看電影、睡覺',
-      specialty: '資訊安全',
-    },
-    {
-      title: '第三張卡片',
-      department: '資訊管理學系 六年級',
-      studentId: '409402348',
-      name: '陳偉倫',
-      interest: '音樂、程式競賽',
-      specialty: '演算法、資料結構',
-    },
-  ];
-
-  return (
-    <Container maxWidth="sm" sx={{ py: 3 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        學生資料卡
-      </Typography>
-
-      {students.map((s, idx) => (
-        <InfoCard key={idx} {...s} />
+            <Button
+              variant="contained"
+              onClick={() => router.push(link.href)}
+              endIcon={<ArrowForwardIcon />}
+              sx={{
+                bgcolor: green[600],
+                '&:hover': { bgcolor: green[700] },
+                borderRadius: 2,
+                textTransform: 'none',
+              }}
+            >
+              前往
+            </Button>
+          </CardContent>
+        </Card>
       ))}
+
+      {/* 底部小字 */}
+      <Typography variant="body2" sx={{ color: grey[500], mt: 4 }}>
+        © 2025 MyApp. All rights reserved.
+      </Typography>
     </Container>
   );
 }
