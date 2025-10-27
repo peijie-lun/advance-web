@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -21,25 +21,44 @@ import {
 import { grey, indigo, teal } from '@mui/material/colors';
 import BusinessIcon from '@mui/icons-material/Business';
 import AddIcon from '@mui/icons-material/Add';
+import { createClient } from '@supabase/supabase-js';
+
+// ✅ 初始化 Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function VendorList() {
-  const [vendors, setVendors] = useState([
-    { id: 'VEN001', name: '華碩電腦股份有限公司', contact: '02-2894-3447', category: '電腦硬體' },
-    { id: 'VEN002', name: '宏碁股份有限公司', contact: '02-8691-3000', category: '電腦設備' },
-    { id: 'VEN003', name: '聯發科技股份有限公司', contact: '03-567-0766', category: '晶片供應' },
-  ]);
-
-  const categories = ['電腦硬體', '電腦設備', '晶片供應'];
-
+  const [vendors, setVendors] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [id, setId] = useState('');
+  const [id, setId] = useState(''); // 自動生成的編號 VEN001...
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [category, setCategory] = useState('');
   const [error, setError] = useState('');
 
-  // 處理電話格式自動加 "-" 並限制長度
-  const handleContactChange = (e) => {
+  const categories = ['電腦硬體', '電腦設備', '晶片供應'];
+
+  // ✅ 抓取 Supabase 資料
+  useEffect(() => {
+    async function fetchVendors() {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching vendors:', error.message);
+      } else {
+        setVendors(data || []);
+      }
+    }
+    fetchVendors();
+  }, []);
+
+  // ✅ 處理電話格式自動加 "-" 並限制長度
+  const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^0-9]/g, ''); // 僅保留數字
 
     // 加上 - 格式
@@ -57,19 +76,55 @@ export default function VendorList() {
     setContact(value);
   };
 
-  const handleAddVendor = () => {
-    if (!id || !name || !contact || !category) {
+  // ✅ 新增廠商到 Supabase（含自動編號）
+  const handleAddVendor = async () => {
+    setError('');
+
+    if (!name.trim() || !contact.trim() || !category.trim()) {
       setError('請填寫所有欄位');
       return;
     }
-    const newVendor = { id, name, contact, category };
-    setVendors([...vendors, newVendor]);
-    setId('');
-    setName('');
-    setContact('');
-    setCategory('');
-    setError('');
-    setOpen(false);
+
+    // 1️⃣ 查詢目前最大 vendor_id
+    const { data: existingVendors, error: fetchError } = await supabase
+      .from('vendors')
+      .select('vendor_id');
+
+    if (fetchError) {
+      setError(`查詢廠商編號失敗：${fetchError.message}`);
+      return;
+    }
+
+    const ids =
+      existingVendors
+        ?.map((v) => v.vendor_id)
+        .filter((id) => /^VEN\d+$/.test(id)) || [];
+    const maxNumber = Math.max(...ids.map((id) => parseInt(id.replace('VEN', ''))), 0);
+    const nextVendorId = `VEN${(maxNumber + 1).toString().padStart(3, '0')}`;
+
+    // 2️⃣ 插入新廠商
+    const newVendor = {
+      vendor_id: nextVendorId,
+      vendor_name: name.trim(),
+      phone: contact.trim(),
+      category: category.trim(),
+    };
+
+    const { data, error: insertError } = await supabase
+      .from('vendors')
+      .insert([newVendor])
+      .select();
+
+    if (insertError) {
+      setError(`新增失敗：${insertError.message}`);
+    } else if (data && data.length > 0) {
+      setVendors((prev) => [data[0], ...prev]);
+      setId('');
+      setName('');
+      setContact('');
+      setCategory('');
+      setOpen(false);
+    }
   };
 
   return (
@@ -96,7 +151,7 @@ export default function VendorList() {
       {/* 廠商卡片 */}
       <Grid container spacing={3}>
         {vendors.map((vendor) => (
-          <Grid item xs={12} md={6} lg={4} key={vendor.id}>
+          <Grid item xs={12} md={6} lg={4} key={vendor.vendor_id}>
             <Card
               sx={{
                 borderRadius: 3,
@@ -112,7 +167,7 @@ export default function VendorList() {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <BusinessIcon sx={{ color: teal[600], mr: 1 }} />
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    廠商編號：{vendor.id}
+                    廠商編號：{vendor.vendor_id}
                   </Typography>
                 </Box>
 
@@ -120,14 +175,14 @@ export default function VendorList() {
                   variant="body1"
                   sx={{ color: indigo[800], fontWeight: 500, mb: 1 }}
                 >
-                  廠商名稱：{vendor.name}
+                  廠商名稱：{vendor.vendor_name}
                 </Typography>
 
                 <Typography
                   variant="body2"
                   sx={{ color: grey[600], fontWeight: 500, mb: 0.5 }}
                 >
-                  聯絡電話：<strong>{vendor.contact}</strong>
+                  聯絡電話：<strong>{vendor.phone}</strong>
                 </Typography>
 
                 <Typography
@@ -156,13 +211,6 @@ export default function VendorList() {
         <DialogTitle>新增廠商</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="廠商編號"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              fullWidth
-              variant="outlined"
-            />
             <TextField
               label="廠商名稱"
               value={name}
