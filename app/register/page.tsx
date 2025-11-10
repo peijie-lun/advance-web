@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { Container, TextField, Button, Typography, Box } from '@mui/material';
+import { Container, TextField, Button, Typography, Box, Paper } from '@mui/material';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -42,14 +42,52 @@ export default function RegisterPage() {
 
   return (
     <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Typography variant="h5" sx={{ mb: 3 }}>註冊</Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <TextField label="密碼" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <TextField label="使用者名稱" value={username} onChange={(e) => setUsername(e.target.value)} />
-        <TextField label="全名" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-        <Button variant="contained" onClick={handleRegister}>送出</Button>
-      </Box>
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, textAlign: 'center' }}>
+          註冊帳號
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TextField
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            sx={{ bgcolor: 'white', borderRadius: 1 }}
+          />
+          <TextField
+            label="密碼"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{ bgcolor: 'white', borderRadius: 1 }}
+          />
+          <TextField
+            label="使用者名稱"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            sx={{ bgcolor: 'white', borderRadius: 1 }}
+          />
+          <TextField
+            label="全名"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            sx={{ bgcolor: 'white', borderRadius: 1 }}
+          />
+          <Button
+            variant="contained"
+            onClick={handleRegister}
+            sx={{
+              mt: 2,
+              bgcolor: '#4caf50',
+              '&:hover': { bgcolor: '#388e3c' },
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            送出
+          </Button>
+        </Box>
+      </Paper>
     </Container>
   );
 }

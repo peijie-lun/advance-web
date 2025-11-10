@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 import { Container, Box, Button, Typography, Card, CardContent } from '@mui/material';
 import { green, grey } from '@mui/material/colors';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
@@ -12,6 +14,24 @@ const links = [
 
 export default function HomePage() {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setIsLoggedIn(!!data.session);
+    };
+    checkSession();
+  }, []);
+
+  const handleNavigate = (href: string) => {
+    if (!isLoggedIn) {
+      alert('請先登入才能查看訂單列表');
+      router.push('/login');
+    } else {
+      router.push(href);
+    }
+  };
 
   return (
     <Container
@@ -62,7 +82,7 @@ export default function HomePage() {
             </Box>
             <Button
               variant="contained"
-              onClick={() => router.push(link.href)}
+              onClick={() => handleNavigate(link.href)}
               endIcon={<ArrowForwardIcon />}
               sx={{
                 bgcolor: green[600],
