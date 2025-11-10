@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Container, Box, Button, Typography, Card, CardContent } from '@mui/material';
 import { green, grey } from '@mui/material/colors';
@@ -27,12 +26,9 @@ export default function HomePage() {
         py: 8,
       }}
     >
-      {/* 標題區塊 */}
+      {/* 標題 */}
       <Box sx={{ textAlign: 'center', mb: 5 }}>
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: 700, color: green[800], mb: 1 }}
-        >
+        <Typography variant="h4" sx={{ fontWeight: 700, color: green[800], mb: 1 }}>
           🌱 歡迎回來！
         </Typography>
         <Typography variant="body1" sx={{ color: grey[700] }}>
@@ -40,7 +36,7 @@ export default function HomePage() {
         </Typography>
       </Box>
 
-      {/* 功能列表卡片 */}
+      {/* 功能卡片 */}
       {links.map((link) => (
         <Card
           key={link.href}
@@ -57,20 +53,13 @@ export default function HomePage() {
             },
           }}
         >
-          <CardContent
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
+          <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Box sx={{ color: green[700], mr: 1 }}>{link.icon}</Box>
               <Typography variant="h6" sx={{ fontWeight: 600, color: green[900] }}>
                 {link.label}
               </Typography>
             </Box>
-
             <Button
               variant="contained"
               onClick={() => router.push(link.href)}
@@ -88,7 +77,21 @@ export default function HomePage() {
         </Card>
       ))}
 
-      {/* 底部小字 */}
+      {/* 登入與註冊按鈕 */}
+      <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
+        <Button variant="outlined" onClick={() => router.push('/login')} sx={{ borderRadius: 2 }}>
+          登入
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => router.push('/register')}
+          sx={{ bgcolor: green[600], '&:hover': { bgcolor: green[700] }, borderRadius: 2 }}
+        >
+          註冊
+        </Button>
+      </Box>
+
+      {/* 底部 */}
       <Typography variant="body2" sx={{ color: grey[500], mt: 4 }}>
         © 2025 MyApp. All rights reserved.
       </Typography>
