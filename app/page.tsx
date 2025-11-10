@@ -7,6 +7,7 @@ import { Container, Box, Button, Typography, Card, CardContent } from '@mui/mate
 import { green, grey } from '@mui/material/colors';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import type { Session, User } from '@supabase/supabase-js';
 
 const links = [
   { href: '/order/orderlist', label: '訂單列表', icon: <ShoppingBagIcon /> },
@@ -15,13 +16,26 @@ const links = [
 export default function HomePage() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsLoggedIn(!!data.session);
+    // 檢查用戶登入狀態
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setIsLoggedIn(!!user);
     };
-    checkSession();
+    getUser();
+
+    // 監聽認證狀態變化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event: string, session: Session | null) => {
+        setUser(session?.user ?? null);
+        setIsLoggedIn(!!session?.user);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleNavigate = (href: string) => {
@@ -52,7 +66,7 @@ export default function HomePage() {
           🌱 歡迎回來！
         </Typography>
         <Typography variant="body1" sx={{ color: grey[700] }}>
-          選擇功能開始使用吧
+          {user ? `您好，${user.email}` : '選擇功能開始使用吧'}
         </Typography>
       </Box>
 
@@ -98,18 +112,20 @@ export default function HomePage() {
       ))}
 
       {/* 登入與註冊按鈕 */}
-      <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-        <Button variant="outlined" onClick={() => router.push('/login')} sx={{ borderRadius: 2 }}>
-          登入
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => router.push('/register')}
-          sx={{ bgcolor: green[600], '&:hover': { bgcolor: green[700] }, borderRadius: 2 }}
-        >
-          註冊
-        </Button>
-      </Box>
+      {!isLoggedIn && (
+        <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
+          <Button variant="outlined" onClick={() => router.push('/login')} sx={{ borderRadius: 2 }}>
+            登入
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => router.push('/register')}
+            sx={{ bgcolor: green[600], '&:hover': { bgcolor: green[700] }, borderRadius: 2 }}
+          >
+            註冊
+          </Button>
+        </Box>
+      )}
 
       {/* 底部 */}
       <Typography variant="body2" sx={{ color: grey[500], mt: 4 }}>

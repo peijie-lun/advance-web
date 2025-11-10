@@ -23,7 +23,9 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { createClient } from '@supabase/supabase-js';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { createClient, Session, User } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 
 // ✅ 初始化 Supabase
 const supabase = createClient(
@@ -47,7 +49,32 @@ export default function OrderList() {
   const [amount, setAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
+  const router = useRouter();
+
+  // ✅ 監聽登入狀態
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      if (!user) router.push('/login'); // 未登入導回登入頁
+    };
+    getUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
+      setUser(session?.user ?? null);
+      if (!session?.user) router.push('/login');
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  // ✅ 讀取訂單資料
   useEffect(() => {
     async function fetchOrders() {
       const { data, error } = await supabase
@@ -64,6 +91,7 @@ export default function OrderList() {
     fetchOrders();
   }, []);
 
+  // ✅ 新增訂單
   async function handleAddOrder() {
     setError(null);
     if (!item.trim()) {
@@ -112,11 +140,9 @@ export default function OrderList() {
     }
   }
 
+  // ✅ 刪除訂單
   async function handleDelete(orderId: string) {
-    const { error } = await supabase
-      .from('orders')
-      .delete()
-      .eq('order_id', orderId);
+    const { error } = await supabase.from('orders').delete().eq('order_id', orderId);
 
     if (error) {
       console.error('刪除失敗：', error.message);
@@ -126,6 +152,7 @@ export default function OrderList() {
     }
   }
 
+  // ✅ 編輯訂單
   function handleEdit(order: Order) {
     setEditOrder(order);
     setItem(order.product_name);
@@ -133,6 +160,7 @@ export default function OrderList() {
     setEditOpen(true);
   }
 
+  // ✅ 更新訂單
   async function handleUpdateOrder() {
     if (!editOrder) return;
 
@@ -170,6 +198,12 @@ export default function OrderList() {
     }
   }
 
+  // ✅ 登出功能
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
+
   return (
     <Container sx={{ py: 6, position: 'relative' }}>
       <Box
@@ -180,16 +214,63 @@ export default function OrderList() {
           p: 3,
           borderRadius: 3,
           boxShadow: 3,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 700, color: grey[100] }}>
-          📦 訂單列表
-        </Typography>
-        <Typography variant="body2" sx={{ color: grey[400] }}>
-          查看您的購買紀錄與金額明細
-        </Typography>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: grey[100] }}>
+            📦 訂單列表
+          </Typography>
+          <Typography variant="body2" sx={{ color: grey[400] }}>
+            查看您的購買紀錄與金額明細
+          </Typography>
+        </Box>
+
+
+        {/* ✅ 使用者資訊與操作按鈕 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {user && (
+              <Typography
+                variant="body2"
+                sx={{ color: grey[300], fontWeight: 500 }}
+              >
+                歡迎，{user.email}
+              </Typography>
+            )}
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={() => router.push('/profile')}
+              sx={{
+                borderColor: grey[500],
+                color: grey[300],
+                '&:hover': { borderColor: teal[400], color: teal[300] },
+              }}
+            >
+              個人資料
+            </Button>
+            <Button
+              variant="outlined"
+              color="inherit"
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{
+                borderColor: grey[500],
+                color: grey[300],
+                '&:hover': { borderColor: teal[400], color: teal[300] },
+              }}
+            >
+              登出
+            </Button>
+          </Box>
+
       </Box>
 
+
+
+      {/* ✅ 訂單卡片區 */}
       <Grid container spacing={3}>
         {orders.map((order) => (
           <Grid item xs={12} md={6} lg={4} key={order.order_id}>
@@ -199,17 +280,14 @@ export default function OrderList() {
                 boxShadow: 4,
                 position: 'relative',
                 transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                '&:hover': {
-                  transform: 'translateY(-5px)',
-                  boxShadow: 8,
-                },
+                '&:hover': { transform: 'translateY(-5px)', boxShadow: 8 },
               }}
             >
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <ShoppingBagIcon sx={{ color: teal[600], mr: 1 }} />
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    訂單編號：{order.custom_order_id}
+                    訂單編號：{order.order_id}
                   </Typography>
                 </Box>
 
@@ -228,38 +306,33 @@ export default function OrderList() {
                 </Typography>
               </CardContent>
 
-              {/* ✅ 修改與刪除 icon 放右下角，間距緊密 */}
+              {/* ✅ 修改與刪除按鈕 */}
               <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: 8,
-                  right: 8,
-                  display: 'flex',
-                  gap: 0.1,
-                }}
-              >
-                <IconButton
-                  edge="end"
-                  aria-label="edit"
-                  onClick={() => handleEdit(order)}
-                  sx={{ color: grey[600] }}
+                  sx={{
+                    position: 'absolute',
+                    bottom: 12,
+                    right: 12,
+                    display: 'flex',
+                    gap: 0.8,
+                    backgroundColor: 'rgba(255,255,255,0.85)',
+                    borderRadius: '12px',
+                    padding: '2px 6px',
+                  }}
                 >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  edge="end"
-                  aria-label="delete"
-                  onClick={() => handleDelete(order.order_id)}
-                  sx={{ color: grey[600] }}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
+                  <IconButton onClick={() => handleEdit(order)} sx={{ color: grey[700], p: 0.5 }}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton onClick={() => handleDelete(order.order_id)} sx={{ color: grey[700], p: 0.5 }}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+
             </Card>
           </Grid>
         ))}
       </Grid>
 
+      {/* ✅ 新增浮動按鈕 */}
       <Fab
         color="primary"
         sx={{ position: 'fixed', bottom: 32, right: 32, bgcolor: teal[500] }}
@@ -268,30 +341,14 @@ export default function OrderList() {
         <AddIcon />
       </Fab>
 
-      {/* 新增 Dialog */}
+      {/* ✅ 新增 Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>新增訂單</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="商品名稱"
-              value={item}
-              onChange={(e) => setItem(e.target.value)}
-              fullWidth
-              variant="outlined"
-            />
-            <TextField
-              label="金額"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              fullWidth
-              variant="outlined"
-            />
-            {error && (
-              <Typography color="error" sx={{ mt: 1 }}>
-                {error}
-              </Typography>
-            )}
+            <TextField label="商品名稱" value={item} onChange={(e) => setItem(e.target.value)} />
+            <TextField label="金額" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            {error && <Typography color="error">{error}</Typography>}
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -302,30 +359,14 @@ export default function OrderList() {
         </DialogActions>
       </Dialog>
 
-      {/* 編輯 Dialog */}
+      {/* ✅ 編輯 Dialog */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)}>
         <DialogTitle>編輯訂單</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="商品名稱"
-              value={item}
-              onChange={(e) => setItem(e.target.value)}
-              fullWidth
-              variant="outlined"
-            />
-            <TextField
-              label="金額"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              fullWidth
-              variant="outlined"
-            />
-            {error && (
-              <Typography color="error" sx={{ mt: 1 }}>
-                {error}
-              </Typography>
-            )}
+            <TextField label="商品名稱" value={item} onChange={(e) => setItem(e.target.value)} />
+            <TextField label="金額" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            {error && <Typography color="error">{error}</Typography>}
           </Stack>
         </DialogContent>
         <DialogActions>
