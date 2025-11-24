@@ -17,13 +17,23 @@ import {
   DialogActions,
   Fab,
   IconButton,
+  Avatar,
+  Chip,
+  Paper,
+  Divider,
+  InputAdornment,
+  Zoom,
 } from '@mui/material';
-import { grey, indigo, teal } from '@mui/material/colors';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import LogoutIcon from '@mui/icons-material/Logout';
+import {
+  ShoppingBag as ShoppingBagIcon,
+  Add as AddIcon,
+  DeleteOutline as DeleteIcon,
+  EditOutlined as EditIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon,
+  AttachMoney as AttachMoneyIcon,
+  Inventory2 as EmptyIcon,
+} from '@mui/icons-material';
 import { createClient, Session, User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
@@ -36,9 +46,10 @@ const supabase = createClient(
 // ✅ 對應 Supabase 資料表欄位
 type Order = {
   order_id: string;
-  custom_order_id: string;
+  custom_order_id: string | null; // 允許為 null
   product_name: string;
   amount: number;
+  created_at?: string;
 };
 
 export default function OrderList() {
@@ -60,7 +71,7 @@ export default function OrderList() {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
-      if (!user) router.push('/login'); // 未登入導回登入頁
+      if (!user) router.push('/login');
     };
     getUser();
 
@@ -113,9 +124,11 @@ export default function OrderList() {
       return;
     }
 
+    // 過濾出格式為 ORDxxx 的 ID
     const ids = existingOrders
       .map((o) => o.custom_order_id)
-      .filter((id) => /^ORD\d+$/.test(id));
+      .filter((id): id is string => !!id && /^ORD\d+$/.test(id));
+      
     const maxNumber = Math.max(...ids.map((id) => parseInt(id.replace('ORD', ''))), 0);
     const nextOrderId = `ORD${(maxNumber + 1).toString().padStart(3, '0')}`;
 
@@ -134,18 +147,16 @@ export default function OrderList() {
       setError(`新增失敗：${insertError.message}`);
     } else if (data) {
       setOrders((prev) => [data[0] as Order, ...prev]);
-      setItem('');
-      setAmount('');
-      setOpen(false);
+      resetForm();
     }
   }
 
   // ✅ 刪除訂單
   async function handleDelete(orderId: string) {
+    if (!confirm('確定要刪除此訂單嗎？')) return;
     const { error } = await supabase.from('orders').delete().eq('order_id', orderId);
 
     if (error) {
-      console.error('刪除失敗：', error.message);
       setError(`刪除失敗：${error.message}`);
     } else {
       setOrders((prev) => prev.filter((order) => order.order_id !== orderId));
@@ -193,189 +204,316 @@ export default function OrderList() {
       );
       setEditOpen(false);
       setEditOrder(null);
-      setItem('');
-      setAmount('');
+      resetForm();
     }
+  }
+
+  function resetForm() {
+    setItem('');
+    setAmount('');
+    setOpen(false);
+    setError(null);
   }
 
   // ✅ 登出功能
   async function handleLogout() {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/');
   }
 
   return (
-    <Container sx={{ py: 6, position: 'relative' }}>
-      <Box
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f6f9fc 0%, #eef2f5 100%)',
+        pb: 8,
+      }}
+    >
+      {/* 🟢 頂部導航欄 (Glassmorphism) */}
+      <Paper
+        elevation={0}
         sx={{
-          textAlign: 'center',
-          mb: 4,
-          backgroundColor: grey[900],
-          p: 3,
-          borderRadius: 3,
-          boxShadow: 3,
+          py: 2,
+          px: 3,
+          mb: 5,
+          borderRadius: 0,
+          borderBottom: '1px solid rgba(0,0,0,0.05)',
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(12px)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: grey[100] }}>
-            📦 訂單列表
-          </Typography>
-          <Typography variant="body2" sx={{ color: grey[400] }}>
-            查看您的購買紀錄與金額明細
-          </Typography>
-        </Box>
-
-
-        {/* ✅ 使用者資訊與操作按鈕 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {user && (
-              <Typography
-                variant="body2"
-                sx={{ color: grey[300], fontWeight: 500 }}
-              >
-                歡迎，{user.email}
-              </Typography>
-            )}
-            <Button
-              variant="outlined"
-              color="inherit"
-              onClick={() => router.push('/profile')}
-              sx={{
-                borderColor: grey[500],
-                color: grey[300],
-                '&:hover': { borderColor: teal[400], color: teal[300] },
-              }}
-            >
-              個人資料
-            </Button>
-            <Button
-              variant="outlined"
-              color="inherit"
-              startIcon={<LogoutIcon />}
-              onClick={handleLogout}
-              sx={{
-                borderColor: grey[500],
-                color: grey[300],
-                '&:hover': { borderColor: teal[400], color: teal[300] },
-              }}
-            >
-              登出
-            </Button>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              bgcolor: 'primary.main',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 14px 0 rgba(0,118,255,0.39)',
+            }}
+          >
+            <ShoppingBagIcon sx={{ color: 'white' }} />
           </Box>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: '#1e293b', lineHeight: 1.2 }}>
+              My Orders
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+              管理您的購買清單
+            </Typography>
+          </Box>
+        </Stack>
 
-      </Box>
-
-
-
-      {/* ✅ 訂單卡片區 */}
-      <Grid container spacing={3}>
-        {orders.map((order) => (
-          <Grid item xs={12} md={6} lg={4} key={order.order_id}>
-            <Card
+        <Stack direction="row" spacing={2} alignItems="center">
+          {user && (
+            <Chip
+              avatar={<Avatar sx={{ bgcolor: '#eff6ff', color: 'primary.main' }}><PersonIcon /></Avatar>}
+              label={user.email?.split('@')[0]}
               sx={{
-                borderRadius: 3,
-                boxShadow: 4,
-                position: 'relative',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                '&:hover': { transform: 'translateY(-5px)', boxShadow: 8 },
+                bgcolor: 'white',
+                border: '1px solid #e2e8f0',
+                fontWeight: 600,
+                display: { xs: 'none', sm: 'flex' },
               }}
-            >
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <ShoppingBagIcon sx={{ color: teal[600], mr: 1 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    訂單編號：{order.order_id}
-                  </Typography>
-                </Box>
+            />
+          )}
+          <Button
+            variant="outlined"
+            color="error"
+            size="small"
+            startIcon={<LogoutIcon />}
+            onClick={handleLogout}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          >
+            登出
+          </Button>
+        </Stack>
+      </Paper>
 
-                <Typography
-                  variant="body1"
-                  sx={{ color: indigo[800], fontWeight: 500, mb: 1 }}
-                >
-                  商品名稱：{order.product_name}
-                </Typography>
+      <Container maxWidth="lg">
+        {/* 🟢 空狀態 (Empty State) */}
+        {orders.length === 0 ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              py: 10,
+              opacity: 0.7,
+            }}
+          >
+            <EmptyIcon sx={{ fontSize: 80, color: '#cbd5e1', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              目前沒有任何訂單
+            </Typography>
+            <Typography variant="body2" color="text.disabled">
+              點擊右下角的按鈕來新增第一筆消費！
+            </Typography>
+          </Box>
+        ) : (
+          /* 🟢 訂單卡片 Grid */
+          <Grid container spacing={3}>
+            {orders.map((order, index) => (
+              <Grid item xs={12} sm={6} md={4} key={order.order_id}>
+                <Zoom in={true} style={{ transitionDelay: `${index * 50}ms` }}>
+                  <Card
+                    sx={{
+                      borderRadius: 4,
+                      boxShadow: '0px 10px 30px rgba(0,0,0,0.04)',
+                      border: '1px solid rgba(0,0,0,0.03)',
+                      transition: 'all 0.3s ease',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: '0px 20px 40px rgba(0,0,0,0.08)',
+                        '& .action-buttons': { opacity: 1, transform: 'translateY(0)' },
+                      },
+                    }}
+                  >
+                    {/* 裝飾用彩色頂部條 */}
+                    <Box
+                      sx={{
+                        height: 6,
+                        background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
+                      }}
+                    />
 
-                <Typography
-                  variant="body2"
-                  sx={{ color: grey[600], fontWeight: 500 }}
-                >
-                  金額：<strong>NT$ {order.amount.toLocaleString()}</strong>
-                </Typography>
-              </CardContent>
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                        {/* 🛠️ 這裡修正了：如果沒有自訂編號，改顯示灰色 UUID */}
+                        <Chip
+                          label={order.custom_order_id ? order.custom_order_id : `#${order.order_id.substring(0, 8).toUpperCase()}`}
+                          size="small"
+                          sx={{
+                            bgcolor: order.custom_order_id ? '#eff6ff' : '#f8fafc', // 藍底 vs 灰底
+                            color: order.custom_order_id ? '#3b82f6' : '#94a3b8',   // 藍字 vs 灰字
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            fontFamily: 'monospace',
+                            letterSpacing: order.custom_order_id ? 'normal' : '-0.5px'
+                          }}
+                        />
+                      </Box>
 
-              {/* ✅ 修改與刪除按鈕 */}
-              <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: 12,
-                    right: 12,
-                    display: 'flex',
-                    gap: 0.8,
-                    backgroundColor: 'rgba(255,255,255,0.85)',
-                    borderRadius: '12px',
-                    padding: '2px 6px',
-                  }}
-                >
-                  <IconButton onClick={() => handleEdit(order)} sx={{ color: grey[700], p: 0.5 }}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(order.order_id)} sx={{ color: grey[700], p: 0.5 }}>
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: '#334155', mb: 0.5 }}>
+                        {order.product_name}
+                      </Typography>
 
-            </Card>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        Product Item
+                      </Typography>
+
+                      <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
+
+                      <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end' }}>
+                        <Typography variant="caption" sx={{ mr: 0.5, color: '#64748b' }}>
+                          Total
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 800,
+                            background: 'linear-gradient(45deg, #2563eb, #db2777)',
+                            backgroundClip: 'text',
+                            textFillColor: 'transparent',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                          }}
+                        >
+                          NT$ {order.amount.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+
+                    {/* 懸浮操作按鈕區域 */}
+                    <Box
+                      className="action-buttons"
+                      sx={{
+                        position: 'absolute',
+                        top: 20,
+                        right: 16,
+                        display: 'flex',
+                        gap: 1,
+                        opacity: { xs: 1, md: 0 }, // 手機版總是顯示，電腦版懸浮顯示
+                        transform: { xs: 'none', md: 'translateY(-10px)' },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(order)}
+                        sx={{ bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f1f5f9', color: '#3b82f6' } }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(order.order_id)}
+                        sx={{ bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#fee2e2', color: '#ef4444' } }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Card>
+                </Zoom>
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        )}
+      </Container>
 
-      {/* ✅ 新增浮動按鈕 */}
+      {/* 🟢 浮動按鈕 */}
       <Fab
         color="primary"
-        sx={{ position: 'fixed', bottom: 32, right: 32, bgcolor: teal[500] }}
+        aria-label="add"
         onClick={() => setOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: 40,
+          right: 40,
+          background: 'linear-gradient(45deg, #3b82f6, #8b5cf6)',
+          boxShadow: '0 10px 25px rgba(59, 130, 246, 0.5)',
+          '&:hover': { transform: 'scale(1.1)' },
+          transition: 'transform 0.2s',
+        }}
       >
         <AddIcon />
       </Fab>
 
-      {/* ✅ 新增 Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>新增訂單</DialogTitle>
+      {/* 🟢 新增/編輯 Dialog 共用樣式 */}
+      <Dialog
+        open={open || editOpen}
+        onClose={resetForm}
+        PaperProps={{
+          sx: { borderRadius: 4, width: '100%', maxWidth: 400, p: 1 },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, textAlign: 'center', pt: 3 }}>
+          {open ? '✨ 新增訂單' : '✏️ 編輯訂單'}
+        </DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="商品名稱" value={item} onChange={(e) => setItem(e.target.value)} />
-            <TextField label="金額" value={amount} onChange={(e) => setAmount(e.target.value)} />
-            {error && <Typography color="error">{error}</Typography>}
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              fullWidth
+              label="商品名稱"
+              placeholder="例如：機械鍵盤"
+              value={item}
+              onChange={(e) => setItem(e.target.value)}
+              variant="outlined"
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><ShoppingBagIcon color="action" /></InputAdornment>,
+              }}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+            />
+            <TextField
+              fullWidth
+              label="金額"
+              placeholder="0"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              variant="outlined"
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><AttachMoneyIcon color="action" /></InputAdornment>,
+              }}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+            />
+            {error && (
+              <Typography color="error" variant="body2" align="center" sx={{ bgcolor: '#fee2e2', p: 1, borderRadius: 2 }}>
+                {error}
+              </Typography>
+            )}
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>取消</Button>
-          <Button variant="contained" onClick={handleAddOrder}>
-            新增
+        <DialogActions sx={{ pb: 3, px: 3, justifyContent: 'center' }}>
+          <Button onClick={resetForm} sx={{ color: '#94a3b8', borderRadius: 2, px: 3 }}>
+            取消
+          </Button>
+          <Button
+            variant="contained"
+            onClick={open ? handleAddOrder : handleUpdateOrder}
+            sx={{
+              borderRadius: 2,
+              px: 4,
+              background: 'linear-gradient(45deg, #3b82f6, #8b5cf6)',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+            }}
+          >
+            確認儲存
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* ✅ 編輯 Dialog */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)}>
-        <DialogTitle>編輯訂單</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="商品名稱" value={item} onChange={(e) => setItem(e.target.value)} />
-            <TextField label="金額" value={amount} onChange={(e) => setAmount(e.target.value)} />
-            {error && <Typography color="error">{error}</Typography>}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditOpen(false)}>取消</Button>
-          <Button variant="contained" onClick={handleUpdateOrder}>
-            更新
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+    </Box>
   );
 }
