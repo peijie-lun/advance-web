@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { Container, Box, Button, Typography, Card, CardContent } from '@mui/material';
-import { green, grey } from '@mui/material/colors';
+import {
+  Container,
+  Box,
+  Button,
+  Typography,
+  Card,
+  CardContent,
+  Stack,
+  useTheme
+} from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import type { Session, User } from '@supabase/supabase-js';
@@ -15,11 +23,11 @@ const links = [
 
 export default function HomePage() {
   const router = useRouter();
+  const theme = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // 檢查用戶登入狀態
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -27,7 +35,6 @@ export default function HomePage() {
     };
     getUser();
 
-    // 監聽認證狀態變化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: string, session: Session | null) => {
         setUser(session?.user ?? null);
@@ -56,60 +63,59 @@ export default function HomePage() {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        bgcolor: green[50],
-        py: 8,
+        bgcolor: theme.palette.background.default,
+        py: theme.spacing(8),
       }}
     >
       {/* 標題 */}
       <Box sx={{ textAlign: 'center', mb: 5 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: green[800], mb: 1 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.primary.main, mb: 1 }}>
           🌱 歡迎回來！
         </Typography>
-        <Typography variant="body1" sx={{ color: grey[700] }}>
+        <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
           {user ? `您好，${user.email}` : '選擇功能開始使用吧'}
         </Typography>
       </Box>
 
       {/* 功能卡片 */}
-      {links.map((link) => (
-        <Card
-          key={link.href}
-          sx={{
-            width: '100%',
-            borderRadius: 3,
-            mb: 2,
-            boxShadow: 4,
-            background: `linear-gradient(135deg, ${green[100]}, ${green[50]})`,
-            transition: 'all 0.25s ease',
-            '&:hover': {
-              transform: 'translateY(-4px)',
-              boxShadow: 8,
-            },
-          }}
-        >
-          <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ color: green[700], mr: 1 }}>{link.icon}</Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: green[900] }}>
-                {link.label}
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              onClick={() => handleNavigate(link.href)}
-              endIcon={<ArrowForwardIcon />}
-              sx={{
-                bgcolor: green[600],
-                '&:hover': { bgcolor: green[700] },
-                borderRadius: 2,
-                textTransform: 'none',
-              }}
-            >
-              前往
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
+      <Stack spacing={2} sx={{ width: '100%' }}>
+        {links.map((link) => (
+          <Card
+            key={link.href}
+            sx={{
+              borderRadius: 3,
+              boxShadow: 4,
+              background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main}20)`,
+              transition: 'all 0.25s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: 8,
+              },
+            }}
+          >
+            <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ color: theme.palette.primary.dark, mr: 1 }}>{link.icon}</Box>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.primary.contrastText }}>
+                  {link.label}
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handleNavigate(link.href)}
+                endIcon={<ArrowForwardIcon />}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                }}
+              >
+                前往
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
 
       {/* 登入與註冊按鈕 */}
       {!isLoggedIn && (
@@ -119,8 +125,9 @@ export default function HomePage() {
           </Button>
           <Button
             variant="contained"
+            color="primary"
             onClick={() => router.push('/register')}
-            sx={{ bgcolor: green[600], '&:hover': { bgcolor: green[700] }, borderRadius: 2 }}
+            sx={{ borderRadius: 2 }}
           >
             註冊
           </Button>
@@ -128,7 +135,7 @@ export default function HomePage() {
       )}
 
       {/* 底部 */}
-      <Typography variant="body2" sx={{ color: grey[500], mt: 4 }}>
+      <Typography variant="body2" sx={{ color: theme.palette.text.disabled, mt: 4 }}>
         © 2025 MyApp. All rights reserved.
       </Typography>
     </Container>
