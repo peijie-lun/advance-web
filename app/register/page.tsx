@@ -3,20 +3,18 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import {
-  Container,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Paper,
-  InputAdornment,
-  Avatar,
-  Stack,
-  Fade,
-  Link,
-  CircularProgress
-} from '@mui/material';
+import Container from '@mui/material/Container';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import InputAdornment from '@mui/material/InputAdornment';
+import Avatar from '@mui/material/Avatar';
+import Stack from '@mui/material/Stack';
+import Fade from '@mui/material/Fade';
+import Link from '@mui/material/Link';
+import CircularProgress from '@mui/material/CircularProgress';
 import {
   PersonAdd as PersonAddIcon,
   Email as EmailIcon,
@@ -31,7 +29,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false); // 新增 Loading 狀態
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
@@ -42,7 +40,6 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    // 1. 建立帳號
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -54,7 +51,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // 2. 插入 profiles
     const userId = authData.user?.id;
     if (userId) {
       const { error: profileError } = await supabase
@@ -76,13 +72,44 @@ export default function RegisterPage() {
       sx={{
         minHeight: '100vh',
         width: '100%',
-        background: 'linear-gradient(135deg, #f6f9fc 0%, #eef2f5 100%)', // 統一背景色
+        background: 'linear-gradient(135deg, #f6f9fc 0%, #eef2f5 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        py: 4, // 上下留白，避免手機版太擠
+        py: 4,
+        position: 'relative',
       }}
     >
+      {/* 🔙 左上角返回按鈕 */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+        }}
+      >
+        <Button
+          variant="outlined"
+          onClick={() => router.push('/')}
+          sx={{
+            borderRadius: 3,
+            textTransform: 'none',
+            px: 2,
+            fontWeight: 600,
+            background: 'rgba(255,255,255,0.6)',
+            backdropFilter: 'blur(6px)',
+            borderColor: '#cbd5e1',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            '&:hover': {
+              background: 'rgba(241,245,249,0.8)',
+              borderColor: '#94a3b8',
+            },
+          }}
+        >
+          返回
+        </Button>
+      </Box>
+
       <Fade in={true} timeout={800}>
         <Container maxWidth="xs">
           <Paper
@@ -99,14 +126,13 @@ export default function RegisterPage() {
               backdropFilter: 'blur(10px)',
             }}
           >
-            {/* ✨ 頂部圖示 */}
             <Avatar
               sx={{
                 m: 1,
                 bgcolor: 'secondary.main',
                 width: 56,
                 height: 56,
-                boxShadow: '0 4px 10px rgba(236, 72, 153, 0.3)', // 粉色系陰影區別於登入
+                boxShadow: '0 4px 10px rgba(236, 72, 153, 0.3)',
                 background: 'linear-gradient(45deg, #ec4899, #8b5cf6)',
               }}
             >
@@ -120,11 +146,8 @@ export default function RegisterPage() {
               加入我們，開始體驗完整功能
             </Typography>
 
-            {/* ✨ 表單區域 */}
             <Box component="form" noValidate sx={{ mt: 1, width: '100%' }}>
               <Stack spacing={2.5}>
-                
-                {/* Email */}
                 <TextField
                   fullWidth
                   label="Email"
@@ -141,7 +164,6 @@ export default function RegisterPage() {
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 }, bgcolor: 'white' }}
                 />
 
-                {/* 密碼 */}
                 <TextField
                   fullWidth
                   label="設定密碼"
@@ -158,7 +180,6 @@ export default function RegisterPage() {
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 }, bgcolor: 'white' }}
                 />
 
-                {/* 使用者名稱 */}
                 <TextField
                   fullWidth
                   label="使用者名稱 (Username)"
@@ -175,7 +196,6 @@ export default function RegisterPage() {
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 }, bgcolor: 'white' }}
                 />
 
-                {/* 全名 (選填) */}
                 <TextField
                   fullWidth
                   label="全名 (Full Name)"
@@ -193,7 +213,6 @@ export default function RegisterPage() {
                 />
               </Stack>
 
-              {/* ✨ 送出按鈕 */}
               <Button
                 fullWidth
                 variant="contained"
@@ -208,7 +227,7 @@ export default function RegisterPage() {
                   fontSize: '1rem',
                   fontWeight: 600,
                   textTransform: 'none',
-                  background: 'linear-gradient(45deg, #ec4899, #8b5cf6)', // 紫粉色漸層
+                  background: 'linear-gradient(45deg, #ec4899, #8b5cf6)',
                   boxShadow: '0 4px 14px 0 rgba(236, 72, 153, 0.39)',
                   transition: 'transform 0.2s',
                   '&:hover': {
@@ -220,14 +239,13 @@ export default function RegisterPage() {
                 {loading ? <CircularProgress size={24} color="inherit" /> : '註冊帳號'}
               </Button>
 
-              {/* ✨ 底部連結 */}
               <Box sx={{ textAlign: 'center', mt: 1 }}>
                 <Typography variant="body2" color="text.secondary">
                   已經有帳號了嗎？{' '}
                   <Link
-                    component="button"
+                    component="a"
+                    href="/login"
                     variant="body2"
-                    onClick={() => router.push('/login')}
                     sx={{
                       fontWeight: 600,
                       textDecoration: 'none',

@@ -1,6 +1,14 @@
 // components/OrderCard.tsx
 import React from 'react';
-import { Grid, Card, Box, CardContent, Chip, Typography, Divider, IconButton, Zoom } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import Box from '@mui/material/Box';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Zoom from '@mui/material/Zoom';
 import { EditOutlined as EditIcon, DeleteOutline as DeleteIcon } from '@mui/icons-material';
 import { Order } from '@/app/order/orderlist/types';
 
@@ -13,7 +21,7 @@ type OrderCardProps = {
 
 export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardProps) {
   return (
-    <Grid item xs={12} sm={6} md={4}>
+    <Grid item xs={12} sm={6} md={4} component="div">
       <Zoom in={true} style={{ transitionDelay: `${index * 50}ms` }}>
         <Card
           sx={{

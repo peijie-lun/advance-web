@@ -1,8 +1,9 @@
 // components/OrderHeader.tsx
 import React from 'react';
 import { Paper, Stack, Box, Typography, Chip, Avatar, Button } from '@mui/material';
-import { ShoppingBag as ShoppingBagIcon, Person as PersonIcon, Logout as LogoutIcon } from '@mui/icons-material';
+import { ShoppingBag as ShoppingBagIcon, Person as PersonIcon, Logout as LogoutIcon, AccountCircle as AccountCircleIcon } from '@mui/icons-material';
 import { User } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 
 type OrderHeaderProps = {
   user: User | null;
@@ -10,6 +11,8 @@ type OrderHeaderProps = {
 };
 
 export default function OrderHeader({ user, onLogout }: OrderHeaderProps) {
+  const router = useRouter();
+
   return (
     <Paper
       elevation={0}
@@ -67,6 +70,22 @@ export default function OrderHeader({ user, onLogout }: OrderHeaderProps) {
             }}
           />
         )}
+
+        {/* 👉 新增：個人資料按鈕 */}
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<AccountCircleIcon />}
+          onClick={() => router.push('/profile')}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
+          個人資料
+        </Button>
+
         <Button
           variant="outlined"
           color="error"
