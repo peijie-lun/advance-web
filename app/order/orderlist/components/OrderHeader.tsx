@@ -1,7 +1,9 @@
 // components/OrderHeader.tsx
 import React from 'react';
-import { Paper, Stack, Box, Typography, Chip, Avatar, Button } from '@mui/material';
-import { ShoppingBag as ShoppingBagIcon, Person as PersonIcon, Logout as LogoutIcon, AccountCircle as AccountCircleIcon } from '@mui/icons-material';
+import { Paper, Stack, Box, Typography, Chip, Avatar, Button, IconButton, Badge, Drawer } from '@mui/material';
+import { ShoppingBag as ShoppingBagIcon, Person as PersonIcon, Logout as LogoutIcon, AccountCircle as AccountCircleIcon, ShoppingCart } from '@mui/icons-material';
+import CartDrawer from '../../../order/orderlist/components/CartDrawer';
+// 移除 supabase client，僅由父層控制
 import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
@@ -11,6 +13,14 @@ type OrderHeaderProps = {
 };
 
 export default function OrderHeader({ user, onLogout }: OrderHeaderProps) {
+  const [cartOpen, setCartOpen] = React.useState(false);
+  const [cartCount, setCartCount] = React.useState(0);
+  const [userId, setUserId] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (user) {
+      setUserId(user.id);
+    }
+  }, [user]);
   const router = useRouter();
 
   return (
@@ -56,8 +66,16 @@ export default function OrderHeader({ user, onLogout }: OrderHeaderProps) {
           </Typography>
         </Box>
       </Stack>
-
       <Stack direction="row" spacing={2} alignItems="center">
+        {/* 購物車按鈕 */}
+        <IconButton color="primary" sx={{ ml: 1 }} onClick={() => setCartOpen(true)}>
+          <Badge badgeContent={cartCount} color="error" max={99}>
+            <ShoppingCart />
+          </Badge>
+        </IconButton>
+        <Drawer anchor="right" open={cartOpen} onClose={() => setCartOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 400, md: 450 } } }}>
+          <CartDrawer userId={userId} onClose={() => setCartOpen(false)} />
+        </Drawer>
         {user && (
           <Chip
             avatar={<Avatar sx={{ bgcolor: '#eff6ff', color: 'primary.main' }}><PersonIcon /></Avatar>}
@@ -70,8 +88,6 @@ export default function OrderHeader({ user, onLogout }: OrderHeaderProps) {
             }}
           />
         )}
-
-        {/* 👉 新增：個人資料按鈕 */}
         <Button
           variant="outlined"
           size="small"
@@ -85,7 +101,6 @@ export default function OrderHeader({ user, onLogout }: OrderHeaderProps) {
         >
           個人資料
         </Button>
-
         <Button
           variant="outlined"
           color="error"

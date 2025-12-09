@@ -49,15 +49,15 @@ export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardP
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
               <Chip
-                label={order.custom_order_id ? order.custom_order_id : `#${order.order_id.substring(0, 8).toUpperCase()}`}
+                label={`#${order.order_id.substring(0, 8).toUpperCase()}`}
                 size="small"
                 sx={{
-                  bgcolor: order.custom_order_id ? '#eff6ff' : '#f8fafc',
-                  color: order.custom_order_id ? '#3b82f6' : '#94a3b8',
+                  bgcolor: '#f8fafc',
+                  color: '#94a3b8',
                   fontWeight: 700,
                   borderRadius: '8px',
                   fontFamily: 'monospace',
-                  letterSpacing: order.custom_order_id ? 'normal' : '-0.5px',
+                  letterSpacing: '-0.5px',
                 }}
               />
             </Box>
