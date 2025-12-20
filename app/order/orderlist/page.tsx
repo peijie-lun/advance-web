@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Container, Grid, Fab, Typography, TextField, Button } from '@mui/material';
+import { Box, Container, Fab, Typography, TextField, Button } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { Add as AddIcon, Inventory2 as EmptyIcon, ShoppingCart as CartIcon } from '@mui/icons-material';
-import { createClient, Session, User } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 // 引入元件
 import OrderHeader from './components/OrderHeader';
@@ -17,7 +19,7 @@ const supabase = createClient(
 
 interface Product {
   product_id: string;
-  product_name: string;
+  name: string;
   price: number;
 }
 
@@ -30,8 +32,7 @@ interface CartItem {
 }
 
 export default function ProductList() {
-  const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<string>('user');
+  const { user, role, loading: authLoading } = useAuth();// 監聽登入狀態 
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -44,30 +45,12 @@ export default function ProductList() {
 
   const router = useRouter();
 
-  // 監聽登入狀態
+  // 監聽登入狀態 - 使用 useAuth
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push('/login');
-      setUser(user);
-
-      // 取得 role
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-      setRole(profile?.role ?? 'user');
-    };
-    getUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) router.push('/login');
-    });
-
-    return () => subscription.unsubscribe();
-  }, [router]);
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
 
   // 讀取商品列表
   const fetchProducts = async () => {
@@ -75,7 +58,8 @@ export default function ProductList() {
     if (search.trim()) {
       query = query.ilike('name', `%${search}%`);
     }
-    const { data, error } = await query;
+    const { data, error } = await query;//await 只能用在 async 函式裡。
+//它會「暫停」程式，等到右邊的 Promise 結果回來，再繼續執行
     if (error) console.error(error.message);
     else setProducts(data as Product[]);
   };
@@ -147,7 +131,7 @@ export default function ProductList() {
   };
 
   const handleEditProduct = (product: Product) => {
-    setItem(product.product_name);
+    setItem(product.name);
     setAmount(product.price.toString());
     setEditProduct(product);
     setIsEditMode(true);
@@ -162,7 +146,7 @@ export default function ProductList() {
 
     const { error } = await supabase
       .from('products')
-      .update({ product_name: item.trim(), price: priceNum })
+      .update({ name: item.trim(), price: priceNum })
       .eq('product_id', editProduct.product_id);
     if (error) setError(error.message);
     else fetchProducts();
@@ -185,10 +169,19 @@ export default function ProductList() {
     setError(null);
   };
 
+  const { signOut } = useAuth();
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     router.push('/');
   };
+
+  if (authLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <Typography>載入中...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f6f9fc 0%, #eef2f5 100%)', pb: 8 }}>
@@ -216,7 +209,7 @@ export default function ProductList() {
         ) : (
           <Grid container spacing={3}>
             {products.map((p) => (
-              <Grid item key={p.product_id} xs={12} sm={6} md={4}>
+              <Grid item component="div" key={p.product_id} xs={12} sm={6} md={4}>
                 <Box
                   sx={{
                     p: 3,
@@ -233,12 +226,12 @@ export default function ProductList() {
                   }}
                 >
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#3b82f6', mb: 1 }}>
-                    {p.product_name}
+                    {p.name}
                   </Typography>
                   <Typography variant="body1" sx={{ fontSize: '1.1rem', fontWeight: 500, color: '#6366f1', mb: 2 }}>
                     NT$ {p.price}
                   </Typography>
-                  {role === 'admin' ? (
+                  {role === 'admin' ? (// 管理者顯示編輯刪除按鈕
                     <Box sx={{ mt: 1, display: 'flex', gap: 2, justifyContent: 'center' }}>
                       <Button
                         variant="outlined"

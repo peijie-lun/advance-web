@@ -3,6 +3,7 @@
 import { Box, Container, Card, CardContent, Typography, Grid } from '@mui/material';
 import { blue, grey, indigo, teal } from '@mui/material/colors';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function OrderList() {
   const orders = [
@@ -12,7 +13,8 @@ export default function OrderList() {
   ];
 
   return (
-    <Container sx={{ py: 6 }}>
+    <ProtectedRoute allowedRoles={['admin']}>      
+      <Container sx={{ py: 6 }}>
       <Box
         sx={{
           textAlign: 'center',
@@ -72,5 +74,6 @@ export default function OrderList() {
         ))}
       </Grid>
     </Container>
+    </ProtectedRoute>
   );
 }
