@@ -11,17 +11,19 @@ import {
   Avatar,
   Paper,
   Divider,
-  CircularProgress, // 新增：用於 Loading 狀態
-  Snackbar,         // 新增：用於提示
-  Alert,            // 新增：用於提示
+  CircularProgress, // 新增:用於 Loading 狀態
+  Snackbar,         // 新增:用於提示
+  Alert,            // 新增:用於提示
   AlertColor,
-  IconButton,       // 新增：用於頭像編輯按鈕
+  IconButton,       // 新增:用於頭像編輯按鈕
 } from '@mui/material';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'; // 新增：頭像編輯圖示
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'; // 新增:頭像編輯圖示
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,11 +39,12 @@ type Profile = {
   email: string;
 };
 
-export default function ProfilePage() {
+function ProfilePage() {
   const router = useRouter();
+  const { user, role } = useAuth(); // 使用 useAuth 獲取用戶資訊
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false); // 新增：儲存中的狀態
+  const [isSaving, setIsSaving] = useState(false); // 新增:儲存中的狀態
   
   // Snackbar 提示狀態
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -66,19 +69,9 @@ export default function ProfilePage() {
   // === 1. Fetch Profile 邏輯 ===
   useEffect(() => {
     async function fetchProfile() {
-      setLoading(true);
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        // 如果沒有用戶，導向登入頁面
-        showSnackbar('請先登入', 'info');
-        router.push('/login');
-        return;
-      }
+      if (!user) return; // 如果沒有用戶，由 ProtectedRoute 處理重定向
       
+      setLoading(true);
       const userEmail = user.email || 'N/A'; // 確保 email 不為空
 
       // 嘗試從 profiles table 獲取資料
@@ -116,7 +109,7 @@ export default function ProfilePage() {
       setLoading(false);
     }
     fetchProfile();
-  }, [router]);
+  }, [user]); // 改為依賴 user
 
   // === 2. 儲存變更邏輯 ===
   async function handleSave() {
@@ -362,3 +355,14 @@ export default function ProfilePage() {
     </Box>
   );
 }
+
+// 包裝 ProfilePage 以使用權限保護
+function ProtectedProfilePage() {
+  return (
+    <ProtectedRoute>
+      <ProfilePage />
+    </ProtectedRoute>
+  );
+}
+
+export default ProtectedProfilePage;

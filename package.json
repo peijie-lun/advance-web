@@ -16,7 +16,7 @@
     "@mui/material": "^7.3.4",
     "@mui/material-nextjs": "^7.3.5",
     "@supabase/supabase-js": "^2.76.1",
-    "next": "^15.5.3",
+    "next": "^16.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -27,7 +27,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.3",
+    "eslint-config-next": "^16.1.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

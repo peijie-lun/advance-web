@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, IconButton, TextField, Button } from '@mui/material';
+import { Box, Typography, IconButton, TextField, Button, CircularProgress } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,6 +26,8 @@ interface CartItem {
 
 export default function CartDrawer({ userId, onClose }: CartDrawerProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (userId) fetchCart();
@@ -33,13 +36,13 @@ export default function CartDrawer({ userId, onClose }: CartDrawerProps) {
   const fetchCart = async () => {
     const { data, error } = await supabase
       .from('cart')
-      .select('cart_id, quantity, products(product_name, price)')
+      .select('cart_id, product_id, quantity, products(product_id, name, price)')
       .eq('user_id', userId);
     if (!error && data) {
       const items = (data as any[]).map((c) => ({
         cart_id: c.cart_id,
         product_id: c.product_id,
-        product_name: c.products.product_name,
+        product_name: c.products.name,
         price: c.products.price,
         quantity: c.quantity,
       }));
@@ -59,6 +62,43 @@ export default function CartDrawer({ userId, onClose }: CartDrawerProps) {
   };
 
   const total = cart.reduce((sum, c) => sum + c.price * c.quantity, 0);
+
+  // 結帳功能
+  const handleCheckout = async () => {
+    if (cart.length === 0) {
+      alert('購物車是空的');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`訂單建立成功！訂單編號：${data.order_id}`);
+        setCart([]); // 清空前端購物車顯示
+        router.push(`/orders/${data.order_id}`); // 導向訂單明細頁
+      } else {
+        alert('結帳失敗：' + data.error);
+      }
+    } catch (error
+            variant="contained" 
+            color="primary" 
+            sx={{ mt: 2 }} 
+            fullWidth 
+            onClick={handleCheckout}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : '結帳'}帳失敗：' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box sx={{ width: 350, p: 2 }}>

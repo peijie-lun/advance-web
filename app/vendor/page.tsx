@@ -22,6 +22,7 @@ import { grey, indigo, teal } from '@mui/material/colors';
 import BusinessIcon from '@mui/icons-material/Business';
 import AddIcon from '@mui/icons-material/Add';
 import { createClient } from '@supabase/supabase-js';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 // ✅ 初始化 Supabase
 const supabase = createClient(
@@ -128,6 +129,7 @@ export default function VendorList() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['admin']}>
     <Container sx={{ py: 6 }}>
       {/* 頁面標題 */}
       <Box
@@ -257,5 +259,6 @@ export default function VendorList() {
         </DialogActions>
       </Dialog>
     </Container>
+    </ProtectedRoute>
   );
 }
