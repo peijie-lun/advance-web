@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Container, Typography, Paper, Chip, CircularProgress, Button, Divider, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import { Box, Container, Typography, Paper, Chip, CircularProgress, Button, Divider, Table, TableBody, TableCell, TableHead, TableRow, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { Receipt as ReceiptIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Order {
   order_id: string;
@@ -23,23 +24,38 @@ interface OrderItem {
 }
 
 export default function OrderDetailPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const router = useRouter();
   const params = useParams();
   const orderId = params.id as string;
 
   useEffect(() => {
-    if (!authLoading && user && orderId) {
+    if (authLoading) return; // 還在載入身分時不做事
+    if (user && orderId) {
       fetchOrderDetail();
     }
   }, [user, authLoading, orderId]);
 
   const fetchOrderDetail = async () => {
     try {
-      const response = await fetch(`/api/orders/${orderId}`);
+      // 取得 access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        alert('未登入');
+        setLoading(false);
+        router.push('/orders');
+        return;
+      }
+      const response = await fetch(`/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
       const data = await response.json();
       
       if (response.ok) {
@@ -61,6 +77,8 @@ export default function OrderDetailPage() {
     switch (status) {
       case 'pending': return 'warning';
       case 'paid': return 'success';
+      case 'shipped': return 'info';
+      case 'completed': return 'success';
       case 'cancelled': return 'error';
       default: return 'default';
     }
@@ -70,8 +88,80 @@ export default function OrderDetailPage() {
     switch (status) {
       case 'pending': return '待付款';
       case 'paid': return '已付款';
+      case 'shipped': return '已出貨';
+      case 'completed': return '已完成';
       case 'cancelled': return '已取消';
       default: return status;
+    }
+  };
+
+  // 管理者更新訂單狀態
+  const handleStatusChange = async (newStatus: string) => {
+    if (!order) return;
+    
+    setUpdating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOrder(data.order);
+        alert('訂單狀態已更新');
+      } else {
+        alert('更新失敗：' + data.error);
+      }
+    } catch (error: any) {
+      alert('更新失敗：' + error.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // 使用者模擬付款
+  const handlePayment = async () => {
+    if (!order) return;
+    
+    const confirmPay = confirm(`確認要付款 NT$ ${order.total_amount} 嗎？`);
+    if (!confirmPay) return;
+    
+    setUpdating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      const response = await fetch(`/api/orders/${orderId}/pay`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOrder(data.order);
+        alert('✅ 付款成功！訂單狀態已更新為「已付款」');
+        // 重新載入訂單明細
+        await fetchOrderDetail();
+      } else {
+        alert('付款失敗：' + data.error);
+      }
+    } catch (error: any) {
+      alert('付款失敗：' + error.message);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -123,6 +213,32 @@ export default function OrderDetailPage() {
 
           <Divider sx={{ my: 3 }} />
 
+          {/* 管理者：修改訂單狀態 */}
+          {role === 'admin' && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                管理訂單
+              </Typography>
+              <FormControl fullWidth>
+                <InputLabel>訂單狀態</InputLabel>
+                <Select
+                  value={order.status}
+                  label="訂單狀態"
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  disabled={updating}
+                >
+                  <MenuItem value="pending">待付款</MenuItem>
+                  <MenuItem value="paid">已付款</MenuItem>
+                  <MenuItem value="shipped">已出貨</MenuItem>
+                  <MenuItem value="completed">已完成</MenuItem>
+                  <MenuItem value="cancelled">已取消</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+
+          <Divider sx={{ my: 3 }} />
+
           {/* 訂單項目 */}
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
             訂單明細
@@ -162,15 +278,16 @@ export default function OrderDetailPage() {
           </Box>
 
           {/* 付款按鈕（僅待付款狀態顯示） */}
-          {order.status === 'pending' && (
+          {order.status === 'pending' && role === 'user' && (
             <Button 
               variant="contained" 
               color="primary" 
               fullWidth 
               sx={{ mt: 3 }}
-              onClick={() => alert('模擬付款功能（尚未實作）')}
+              onClick={handlePayment}
+              disabled={updating}
             >
-              立即付款
+              {updating ? '處理中...' : '💳 立即付款'}
             </Button>
           )}
         </Paper>

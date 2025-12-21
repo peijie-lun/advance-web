@@ -1,21 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+
+function getSupabaseWithAuth(token: string | undefined) {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+      },
+      auth: { persistSession: false },
+    }
+  );
+}
 
 // POST - 建立訂單（從購物車）
 export async function POST(request: NextRequest) {
   try {
-    // 1. 驗證使用者
+    // 1. 從 header 取得 access token
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    const supabase = getSupabaseWithAuth(token);
+
+    // 2. 驗證使用者
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: '未登入' }, { status: 401 });
     }
 
-    // 2. 從購物車撈出商品
+    // 3. 從購物車撈出商品
     const { data: cartItems, error: cartError } = await supabase
       .from('cart')
       .select(`
@@ -33,17 +47,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: cartError.message }, { status: 500 });
     }
 
-    // 3. 若購物車為空
+    // 4. 若購物車為空
     if (!cartItems || cartItems.length === 0) {
       return NextResponse.json({ error: '購物車是空的' }, { status: 400 });
     }
 
-    // 4. 計算總金額
+    // 5. 計算總金額
     const totalAmount = cartItems.reduce((sum, item: any) => {
       return sum + (item.products.price * item.quantity);
     }, 0);
 
-    // 5. 建立訂單
+    // 6. 建立訂單
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([
@@ -60,7 +74,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: orderError.message }, { status: 500 });
     }
 
-    // 6. 建立訂單項目（order_items）
+    // 7. 建立訂單項目（order_items）
     const orderItems = cartItems.map((item: any) => ({
       order_id: order.order_id,
       product_id: item.product_id,
@@ -79,7 +93,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 
-    // 7. 清空購物車
+    // 8. 清空購物車
     const { error: deleteError } = await supabase
       .from('cart')
       .delete()
@@ -103,13 +117,18 @@ export async function POST(request: NextRequest) {
 // GET - 查詢訂單列表
 export async function GET(request: NextRequest) {
   try {
-    // 1. 驗證使用者
+    // 1. 從 header 取得 access token
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    const supabase = getSupabaseWithAuth(token);
+
+    // 2. 驗證使用者
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: '未登入' }, { status: 401 });
     }
 
-    // 2. 取得使用者角色
+    // 3. 取得使用者角色
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -118,7 +137,7 @@ export async function GET(request: NextRequest) {
 
     const role = profile?.role ?? 'user';
 
-    // 3. 查詢訂單
+    // 4. 查詢訂單
     let query = supabase
       .from('orders')
       .select('*')

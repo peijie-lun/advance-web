@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Container, Fab, Typography, TextField, Button } from '@mui/material';
+import { Box, Container, Fab, Typography, TextField, Button, IconButton, Tooltip } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Add as AddIcon, Inventory2 as EmptyIcon, ShoppingCart as CartIcon } from '@mui/icons-material';
+import { Add as AddIcon, Inventory2 as EmptyIcon, ShoppingCart as CartIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -188,6 +188,18 @@ export default function ProductList() {
       <OrderHeader user={user} onLogout={handleLogout} />
 
       <Container maxWidth="lg" sx={{ mt: 4 }}>
+        {/* 訂單按鈕：管理者看「所有訂單」，使用者看「我的訂單」 */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+          <Button 
+            variant="outlined" 
+            color="primary" 
+            onClick={() => router.push('/orders')}
+            sx={{ fontWeight: 600 }}
+          >
+            {role === 'admin' ? '📋 查看所有訂單' : '📋 我的訂單'}
+          </Button>
+        </Box>
+
         {/* 搜尋框 */}
         <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
           <TextField
@@ -209,7 +221,7 @@ export default function ProductList() {
         ) : (
           <Grid container spacing={3}>
             {products.map((p) => (
-              <Grid item component="div" key={p.product_id} xs={12} sm={6} md={4}>
+              <Grid item key={p.product_id} xs={12} sm={6} md={4}>
                 <Box
                   sx={{
                     p: 3,
@@ -232,36 +244,35 @@ export default function ProductList() {
                     NT$ {p.price}
                   </Typography>
                   {role === 'admin' ? (// 管理者顯示編輯刪除按鈕
-                    <Box sx={{ mt: 1, display: 'flex', gap: 2, justifyContent: 'center' }}>
-                      <Button
-                        variant="outlined"
-                        sx={{
-                          borderRadius: 3,
-                          px: 3,
-                          fontWeight: 600,
-                          color: '#2563eb',
-                          borderColor: '#2563eb',
-                          '&:hover': { background: '#eff6ff', borderColor: '#1d4ed8', color: '#1d4ed8' },
-                        }}
-                        onClick={() => handleEditProduct(p)}
-                      >
-                        編輯
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        sx={{
-                          borderRadius: 3,
-                          px: 3,
-                          fontWeight: 600,
-                          borderColor: '#ef4444',
-                          color: '#ef4444',
-                          '&:hover': { background: '#fef2f2', borderColor: '#b91c1c', color: '#b91c1c' },
-                        }}
-                        onClick={() => handleDeleteProduct(p.product_id)}
-                      >
-                        刪除
-                      </Button>
+                    <Box sx={{ mt: 1, display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Tooltip title="編輯" arrow>
+                        <IconButton
+                          color="primary"
+                          sx={{
+                            background: '#e0e7ef',
+                            borderRadius: 2,
+                            boxShadow: '0 2px 8px rgba(59,130,246,0.10)',
+                            '&:hover': { background: '#dbeafe', color: '#1d4ed8' },
+                          }}
+                          onClick={() => handleEditProduct(p)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="刪除" arrow>
+                        <IconButton
+                          color="error"
+                          sx={{
+                            background: '#fef2f2',
+                            borderRadius: 2,
+                            boxShadow: '0 2px 8px rgba(239,68,68,0.10)',
+                            '&:hover': { background: '#fee2e2', color: '#b91c1c' },
+                          }}
+                          onClick={() => handleDeleteProduct(p.product_id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
                   ) : (
                     <Button

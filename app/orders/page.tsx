@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Container, Typography, Paper, Chip, CircularProgress, Button } from '@mui/material';
+import { Box, Container, Typography, Paper, Chip, CircularProgress, Button, IconButton, Tooltip } from '@mui/material';
 import { Receipt as ReceiptIcon, ShoppingBag as ShoppingBagIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Order {
   order_id: string;
@@ -18,6 +20,7 @@ export default function OrdersPage() {
   const { user, role, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,7 +31,19 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/orders');
+      // 取得 access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        console.error('未登入');
+        setLoading(false);
+        return;
+      }
+      const response = await fetch('/api/orders', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
       const data = await response.json();
       
       if (response.ok) {
@@ -58,6 +73,38 @@ export default function OrdersPage() {
       case 'paid': return '已付款';
       case 'cancelled': return '已取消';
       default: return status;
+    }
+  };
+
+  // 管理者刪除訂單
+  const handleDeleteOrder = async (orderId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 避免觸發訂單詳情導航
+    if (!confirm('確定要刪除此訂單嗎？此操作無法復原！')) return;
+    
+    setDeleting(orderId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('訂單已刪除');
+        fetchOrders(); // 重新載入訂單列表
+      } else {
+        alert('刪除失敗：' + data.error);
+      }
+    } catch (error: any) {
+      alert('刪除失敗：' + error.message);
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -113,11 +160,27 @@ export default function OrdersPage() {
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     訂單 #{order.order_id.slice(0, 8)}
                   </Typography>
-                  <Chip 
-                    label={getStatusText(order.status)} 
-                    color={getStatusColor(order.status)} 
-                    size="small"
-                  />
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Chip 
+                      label={getStatusText(order.status)} 
+                      color={getStatusColor(order.status)} 
+                      size="small"
+                    />
+                    {role === 'admin' && (
+                      <Tooltip title="刪除訂單" arrow>
+                        <span>
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={(e) => handleDeleteOrder(order.order_id, e)}
+                            disabled={deleting === order.order_id}
+                          >
+                            {deleting === order.order_id ? <CircularProgress size={20} color="error" /> : <DeleteIcon />}
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
+                  </Box>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
