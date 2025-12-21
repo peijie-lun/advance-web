@@ -21,7 +21,7 @@ type OrderCardProps = {
 
 export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardProps) {
   return (
-    <Grid item xs={12} sm={6} md={4} component="div">
+    <Grid item xs={12} sm={6} md={4}>
       <Zoom in={true} style={{ transitionDelay: `${index * 50}ms` }}>
         <Card
           sx={{

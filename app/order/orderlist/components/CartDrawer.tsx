@@ -72,9 +72,20 @@ export default function CartDrawer({ userId, onClose }: CartDrawerProps) {
 
     setLoading(true);
     try {
+      // 取得 access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        alert('請先登入');
+        setLoading(false);
+        return;
+      }
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
       });
 
       const data = await response.json();
@@ -86,15 +97,8 @@ export default function CartDrawer({ userId, onClose }: CartDrawerProps) {
       } else {
         alert('結帳失敗：' + data.error);
       }
-    } catch (error
-            variant="contained" 
-            color="primary" 
-            sx={{ mt: 2 }} 
-            fullWidth 
-            onClick={handleCheckout}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : '結帳'}帳失敗：' + error.message);
+    } catch (error: any) {
+      alert('結帳失敗：' + error.message);
     } finally {
       setLoading(false);
     }
@@ -123,8 +127,15 @@ export default function CartDrawer({ userId, onClose }: CartDrawerProps) {
             </Box>
           ))}
           <Typography variant="h6" sx={{ mt: 2 }}>總金額: NT$ {total}</Typography>
-          <Button variant="contained" color="primary" sx={{ mt: 2 }} fullWidth onClick={onClose}>
-            結帳
+          <Button 
+            variant="contained" 
+            color="primary" 
+            sx={{ mt: 2 }} 
+            fullWidth 
+            onClick={handleCheckout}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : '結帳'}
           </Button>
         </Box>
       )}
