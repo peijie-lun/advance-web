@@ -6,7 +6,16 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
 // 可重用的卡片元件：固定五個欄位
-function InfoCard({ title, department, studentId, name, interest, specialty }) {
+type InfoCardProps = {
+  title: string;
+  department: string;
+  studentId: string;
+  name: string;
+  interest: string;
+  specialty: string;
+};
+
+function InfoCard({ title, department, studentId, name, interest, specialty }: InfoCardProps) {
   const [count, setCount] = useState(0);
 
   return (

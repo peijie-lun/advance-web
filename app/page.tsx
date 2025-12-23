@@ -1,4 +1,4 @@
-'use client';
+'use client';// This is a client component because it uses hooks and context
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import type { Session, User } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
 
+//把UI拆成元件
 import HomeHeader from '@/components/HomeHeader';
 import HomeFeatureCard from '@/components/HomeFeatureCard';
 import AuthButtons from '@/components/AuthButtons';
