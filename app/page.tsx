@@ -25,6 +25,8 @@ const getRoleBasedLinks = (role: string, isLoggedIn: boolean) => {
     { href: '/orders', label: '🧾 我的訂單', roles: ['admin', 'user'] },
     { href: '/cart', label: '🛒 購物車', roles: ['admin', 'user'] },
     { href: '/profile', label: '👤 個人資料', roles: ['admin', 'user'] },
+    //新增
+    { href: '/history', label: '👤 帳號歷史紀錄', roles: ['admin'] }
   ];
 
   return allLinks.filter(link => link.roles.includes(role));

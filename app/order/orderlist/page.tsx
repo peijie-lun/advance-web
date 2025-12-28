@@ -7,6 +7,7 @@ import { Add as AddIcon, Inventory2 as EmptyIcon, ShoppingCart as CartIcon, Edit
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { CardActionArea } from '@mui/material';
 
 // 引入元件
 import OrderHeader from './components/OrderHeader';
@@ -21,6 +22,7 @@ interface Product {
   product_id: string;
   name: string;
   price: number;
+  url?: string;
 }
 
 interface CartItem {
@@ -39,6 +41,7 @@ export default function ProductList() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [item, setItem] = useState('');
   const [amount, setAmount] = useState('');
+  const [url, setUrl] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +66,7 @@ export default function ProductList() {
     if (error) console.error(error.message);
     else setProducts(data as Product[]);
   };
-
+  
   useEffect(() => {
     fetchProducts();
   }, [search]);
@@ -121,18 +124,23 @@ export default function ProductList() {
     if (!item.trim()) return setError('請輸入商品名稱');
     const priceNum = Number(amount);
     if (!amount || isNaN(priceNum) || priceNum <= 0) return setError('價格需大於 0');
-
-    const newProduct = { name: item.trim(), price: priceNum };
+  
+    const newProduct = { 
+      name: item.trim(), 
+      price: priceNum,
+      url: url.trim() || null  // 新增這行
+    };
     const { data, error: insertError } = await supabase.from('products').insert([newProduct]).select();
     if (insertError) setError(insertError.message);
     else fetchProducts();
-
+  
     resetForm();
   };
 
   const handleEditProduct = (product: Product) => {
     setItem(product.name);
     setAmount(product.price.toString());
+    setUrl(product.url || '');
     setEditProduct(product);
     setIsEditMode(true);
     setDialogOpen(true);
@@ -143,14 +151,18 @@ export default function ProductList() {
     const priceNum = Number(amount);
     if (!item.trim()) return setError('請輸入商品名稱');
     if (!amount || isNaN(priceNum) || priceNum <= 0) return setError('價格需大於 0');
-
+  
     const { error } = await supabase
       .from('products')
-      .update({ name: item.trim(), price: priceNum })
+      .update({ 
+        name: item.trim(), 
+        price: priceNum,
+        url: url.trim() || null  // 新增這行
+      })
       .eq('product_id', editProduct.product_id);
     if (error) setError(error.message);
     else fetchProducts();
-
+  
     resetForm();
   };
 
@@ -163,6 +175,7 @@ export default function ProductList() {
   const resetForm = () => {
     setItem('');
     setAmount('');
+    setUrl('');
     setEditProduct(null);
     setIsEditMode(false);
     setDialogOpen(false);
@@ -224,82 +237,113 @@ export default function ProductList() {
               <Grid item key={p.product_id} xs={12} sm={6} md={4}>
                 <Box
                   sx={{
-                    p: 3,
                     borderRadius: 4,
-                    textAlign: 'center',
                     background: 'linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%)',
                     boxShadow: '0 4px 18px rgba(59,130,246,0.08)',
                     border: 'none',
                     transition: 'box-shadow 0.2s, transform 0.2s',
+                    overflow: 'hidden',  // 新增這行
                     '&:hover': {
                       boxShadow: '0 8px 32px rgba(59,130,246,0.18)',
                       transform: 'translateY(-3px) scale(1.02)',
                     },
                   }}
                 >
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#3b82f6', mb: 1 }}>
-                    {p.name}
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontSize: '1.1rem', fontWeight: 500, color: '#6366f1', mb: 2 }}>
-                    NT$ {p.price}
-                  </Typography>
-                  {role === 'admin' ? (// 管理者顯示編輯刪除按鈕
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1, justifyContent: 'center' }}>
-                      <Tooltip title="編輯" arrow>
-                        <IconButton
-                          color="primary"
-                          sx={{
-                            background: '#e0e7ef',
-                            borderRadius: 2,
-                            boxShadow: '0 2px 8px rgba(59,130,246,0.10)',
-                            '&:hover': { background: '#dbeafe', color: '#1d4ed8' },
-                          }}
-                          onClick={() => handleEditProduct(p)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="刪除" arrow>
-                        <IconButton
-                          color="error"
-                          sx={{
-                            background: '#fef2f2',
-                            borderRadius: 2,
-                            boxShadow: '0 2px 8px rgba(239,68,68,0.10)',
-                            '&:hover': { background: '#fee2e2', color: '#b91c1c' },
-                          }}
-                          onClick={() => handleDeleteProduct(p.product_id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  ) : (
-                    <Button
-                      variant="contained"
-                      startIcon={<CartIcon />}
-                      sx={{
-                        mt: 1,
-                        borderRadius: 4,
-                        px: 3,
-                        py: 1.2,
-                        fontWeight: 700,
-                        fontSize: '1rem',
-                        background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
-                        color: '#fff',
-                        boxShadow: '0 4px 16px rgba(59,130,246,0.15)',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          background: 'linear-gradient(90deg, #2563eb 0%, #7c3aed 100%)',
-                          boxShadow: '0 8px 24px rgba(59,130,246,0.22)',
-                          transform: 'translateY(-2px) scale(1.03)',
-                        },
-                      }}
-                      onClick={() => handleAddToCart(p)}
-                    >
-                      加入購物車
-                    </Button>
-                  )}
+                  {/* 可點擊區域 - 只在有 URL 時可點擊 */}
+                  <CardActionArea
+                    onClick={() => p.url && window.open(p.url, '_blank')}
+                    disabled={!p.url}
+                    sx={{ 
+                      p: 3, 
+                      textAlign: 'center',
+                      cursor: p.url ? 'pointer' : 'default',
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#3b82f6', mb: 1 }}>
+                      {p.name}
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontSize: '1.1rem', fontWeight: 500, color: '#6366f1', mb: 2 }}>
+                      NT$ {p.price}
+                    </Typography>
+                    
+                    {/* URL 指示器 */}
+                    {p.url && (
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: '#8b5cf6', 
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 0.5
+                        }}
+                      >
+                        🔗 點擊查看商品詳情
+                      </Typography>
+                    )}
+                  </CardActionArea>
+
+                  {/* 操作按鈕區域 - 不受 CardActionArea 影響 */}
+                  <Box sx={{ p: 2, pt: 0 }}>
+                    {role === 'admin' ? (
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Tooltip title="編輯" arrow>
+                          <IconButton
+                            color="primary"
+                            sx={{
+                              background: '#e0e7ef',
+                              borderRadius: 2,
+                              boxShadow: '0 2px 8px rgba(59,130,246,0.10)',
+                              '&:hover': { background: '#dbeafe', color: '#1d4ed8' },
+                            }}
+                            onClick={() => handleEditProduct(p)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="刪除" arrow>
+                          <IconButton
+                            color="error"
+                            sx={{
+                              background: '#fef2f2',
+                              borderRadius: 2,
+                              boxShadow: '0 2px 8px rgba(239,68,68,0.10)',
+                              '&:hover': { background: '#fee2e2', color: '#b91c1c' },
+                            }}
+                            onClick={() => handleDeleteProduct(p.product_id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        startIcon={<CartIcon />}
+                        sx={{
+                          width: '100%',
+                          borderRadius: 4,
+                          px: 3,
+                          py: 1.2,
+                          fontWeight: 700,
+                          fontSize: '1rem',
+                          background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
+                          color: '#fff',
+                          boxShadow: '0 4px 16px rgba(59,130,246,0.15)',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            background: 'linear-gradient(90deg, #2563eb 0%, #7c3aed 100%)',
+                            boxShadow: '0 8px 24px rgba(59,130,246,0.22)',
+                            transform: 'translateY(-2px) scale(1.03)',
+                          },
+                        }}
+                        onClick={() => handleAddToCart(p)}
+                      >
+                        加入購物車
+                      </Button>
+                    )}
+                  </Box>
                 </Box>
               </Grid>
             ))}
@@ -334,6 +378,8 @@ export default function ProductList() {
           setItem={setItem}
           amount={amount}
           setAmount={setAmount}
+          url={url}
+          setUrl={setUrl}
           error={error}
           onClose={resetForm}
           onSubmit={isEditMode ? handleUpdateProduct : handleAddProduct}
