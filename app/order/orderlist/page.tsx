@@ -345,7 +345,7 @@ export default function ProductList() {
                           borderRadius: 4,
                           px: 3,
                           py: 1.2,
-                          fontWeight: 700,
+                          fontWeight: 700,        
                           fontSize: '1rem',
                           background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
                           color: '#fff',
