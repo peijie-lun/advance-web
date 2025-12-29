@@ -3,7 +3,7 @@
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
-export default function HomeFooter() {
+export default function HomeFooter() {               
   const theme = useTheme();
 
   return (
