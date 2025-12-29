@@ -80,6 +80,7 @@ export default function OrderHeader({ user, onLogout }: OrderHeaderProps) {
           <Chip
             avatar={<Avatar sx={{ bgcolor: '#eff6ff', color: 'primary.main' }}><PersonIcon /></Avatar>}
             label={user.email?.split('@')[0]}
+            onClick={() => router.push('/profile')}
             sx={{
               bgcolor: 'white',
               border: '1px solid #e2e8f0',
@@ -92,14 +93,14 @@ export default function OrderHeader({ user, onLogout }: OrderHeaderProps) {
           variant="outlined"
           size="small"
           startIcon={<AccountCircleIcon />}
-          onClick={() => router.push('/profile')}
+          onClick={() => router.push('/')}
           sx={{
             borderRadius: 2,
             textTransform: 'none',
             fontWeight: 600,
           }}
         >
-          個人資料
+          主頁
         </Button>
         <Button
           variant="outlined"
