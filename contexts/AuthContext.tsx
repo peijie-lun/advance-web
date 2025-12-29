@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 // 會自動監聽登入狀態變化（登入、登出、重新整理），自動更新 user 和 role。
 // 提供 signOut() 方法，讓你可以隨時登出並清空狀態。
   useEffect(() => {
-    // 初始化時檢查用戶狀態
+    // 初始化時檢查用戶狀態               
     const initializeAuth = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
