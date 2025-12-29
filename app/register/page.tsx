@@ -66,7 +66,7 @@ export default function RegisterPage() {
     }
     setLoading(false);
   };
-
+                            
   return (
     <Box
       sx={{
