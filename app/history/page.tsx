@@ -297,7 +297,7 @@ export default function HistoryPage() {
                                     }}
                                   />
                                 ) : (
-                                  <Chip
+                                  <Chip                
                                     icon={<CancelIcon />}
                                     label="失敗"
                                     size="small"
