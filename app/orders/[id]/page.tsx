@@ -51,7 +51,7 @@ export default function OrderDetailPage() {
         router.push('/orders');
         return;
       }
-      const response = await fetch(`/api/orders/${orderId}`, {
+      const response = await fetch(`/api/orders/${orderId}`, {//呼叫取得訂單明細的 API
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
@@ -140,7 +140,7 @@ export default function OrderDetailPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
       
-      const response = await fetch(`/api/orders/${orderId}/pay`, {
+      const response = await fetch(`/api/orders/${orderId}/pay`, {//呼叫付款的 API
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

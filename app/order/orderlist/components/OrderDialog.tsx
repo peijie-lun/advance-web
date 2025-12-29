@@ -17,7 +17,7 @@ type OrderDialogProps = {
   onSubmit: () => void;
 };
 
-export default function OrderDialog({
+export default function OrderDialog({//解收父元件傳來的屬性
   open,
   isEditMode,
   item,
