@@ -1,4 +1,5 @@
 // components/OrderCard.tsx
+//顯示單一訂單卡片
 import React from 'react';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -19,9 +20,11 @@ type OrderCardProps = {
   onDelete: (id: string) => void;
 };
 
+// OrderCard 元件：顯示單一訂單卡片，含編輯/刪除操作
 export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardProps) {
   return (
     <Grid item xs={12} sm={6} md={4}>
+      {/* Zoom 動畫，index 決定延遲，讓卡片進場有階梯感 */}
       <Zoom in={true} style={{ transitionDelay: `${index * 50}ms` }}>
         <Card
           sx={{
@@ -47,6 +50,7 @@ export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardP
           />
 
           <CardContent sx={{ p: 3 }}>
+            {/* 訂單編號（只顯示前 8 碼） */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
               <Chip
                 label={`#${order.order_id.substring(0, 8).toUpperCase()}`}
@@ -62,16 +66,19 @@ export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardP
               />
             </Box>
 
+            {/* 商品名稱 */}
             <Typography variant="h6" sx={{ fontWeight: 700, color: '#334155', mb: 0.5 }}>
               {order.product_name}
             </Typography>
 
+            {/* 商品類型說明（可自訂） */}
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Product Item
             </Typography>
 
             <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
+            {/* 顯示總金額 */}
             <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end' }}>
               <Typography variant="caption" sx={{ mr: 0.5, color: '#64748b' }}>
                 Total
@@ -92,7 +99,7 @@ export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardP
             </Box>
           </CardContent>
 
-          {/* 懸浮操作按鈕區域 */}
+          {/* 懸浮操作按鈕區域（編輯/刪除） */}
           <Box
             className="action-buttons"
             sx={{
@@ -106,6 +113,7 @@ export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardP
               transition: 'all 0.3s ease',
             }}
           >
+            {/* 編輯按鈕，點擊會呼叫 onEdit 並傳入該訂單 */}
             <IconButton
               size="small"
               onClick={() => onEdit(order)}
@@ -113,6 +121,7 @@ export default function OrderCard({ order, index, onEdit, onDelete }: OrderCardP
             >
               <EditIcon fontSize="small" />
             </IconButton>
+            {/* 刪除按鈕，點擊會呼叫 onDelete 並傳入訂單 id */}
             <IconButton
               size="small"
               onClick={() => onDelete(order.order_id)}

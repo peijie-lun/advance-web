@@ -60,6 +60,11 @@ export default function ProductList() {
   const router = useRouter();
 
   // 只要 user 狀態變成未登入，導向登入頁
+  //useEffect 用來監聽 user、authLoading、router 這三個變數的變化。
+
+  //ueEffect 會在以下兩種情況下執行：
+  //畫面出現時自動執行某些動作（如資料抓取、訂閱、事件監聽）。
+  //依賴的變數變動時自動重新執行（如 user 變動時重新查詢購物車）。
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
@@ -67,15 +72,15 @@ export default function ProductList() {
   }, [user, authLoading, router]);
 
   // 讀取商品列表，支援搜尋
-  const fetchProducts = async () => {
-    let query = supabase.from('products').select('*').order('created_at', { ascending: false });
-    if (search.trim()) {
+  const fetchProducts = async () => {// 從 Supabase 的 products 資料表撈取商品列表
+    let query = supabase.from('products').select('*').order('created_at', { ascending: false });//預設依建立時間排序 //從 products 資料表選取所有欄位，並依照 created_at 欄位進行降冪排序（最新的商品會排在最前面）。
+    if (search.trim()) {//.trim() 去除前後空白 //檢查搜尋關鍵字是否有內容
       // 有搜尋關鍵字時，模糊搜尋商品名稱
       query = query.ilike('name', `%${search}%`);
     }
     const { data, error } = await query;
     if (error) console.error(error.message);
-    else setProducts(data as Product[]);
+    else setProducts(data as Product[]);//把撈到的商品資料存進 products 狀態 //as Product[] 強制轉型為 Product 陣列
   };
 
   useEffect(() => {
@@ -83,7 +88,7 @@ export default function ProductList() {
   }, [search]);
 
   // 加入購物車：如果商品已存在就數量+1，否則新增一筆
-  const handleAddToCart = async (product: Product) => {
+  const handleAddToCart = async (product: Product) => {//代表這個參數product（或變數）必須是一個「商品」物件，且必須包含 product_id、name、price 這些屬性。
     if (!user) return;
     const { data: existingCart } = await supabase
       .from('cart')
@@ -117,7 +122,7 @@ export default function ProductList() {
     if (error) console.error(error.message);
     else {
       // 整理購物車資料格式
-      const cartItems = (data as any[]).map((c) => ({
+      const cartItems = (data as any[]).map((c) => ({//轉換成前端需要的格式存進 cart 狀態。 //any表示不確定的類型  //map 用來遍歷每一個購物車項目 c，並建立一個新的物件陣列。
         cart_id: c.cart_id,
         product_id: c.product_id,
         product_name: c.products.name,
@@ -136,13 +141,13 @@ export default function ProductList() {
   const handleAddProduct = async () => {
     setError(null);
     if (!item.trim()) return setError('請輸入商品名稱');
-    const priceNum = Number(amount);
-    if (!amount || isNaN(priceNum) || priceNum <= 0) return setError('價格需大於 0');
+    const priceNum = Number(amount);//把字串轉成數字
+    if (!amount || isNaN(priceNum) || priceNum <= 0) return setError('價格需大於 0');//isNaN 檢查是否為非數值
 
-    const newProduct = { name: item.trim(), price: priceNum };
+    const newProduct = { name: item.trim(), price: priceNum };//建立一個新的商品物件
     const { data, error: insertError } = await supabase.from('products').insert([newProduct]).select();
     if (insertError) setError(insertError.message);
-    else fetchProducts();
+    else fetchProducts();// 新增成功後重新載入列表
 
     resetForm();
   };
@@ -162,7 +167,7 @@ export default function ProductList() {
     if (!editProduct) return;
     const priceNum = Number(amount);
     if (!item.trim()) return setError('請輸入商品名稱');
-    if (!amount || isNaN(priceNum) || priceNum <= 0) return setError('價格需大於 0');
+    if (!amount || isNaN(priceNum) || priceNum <= 0) return setError('價格需大於 0');//isNaN 檢查是否為非數值  //檢查價格是否有效
 
     const { error } = await supabase
       .from('products')
@@ -247,7 +252,7 @@ export default function ProductList() {
           </Box>
         ) : (
           <Grid container spacing={3}>
-            {products.map((p) => (
+            {products.map((p) => (//遍歷 products 陣列，顯示每個商品
               <Grid item key={p.product_id} xs={12} sm={6} md={4}>
                 <Box
                   sx={{

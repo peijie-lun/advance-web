@@ -1,4 +1,5 @@
 // components/OrderDialog.tsx
+//訂單新增/編輯對話框
 import React from 'react';
 import { Dialog, DialogTitle, DialogContent, Stack, TextField, InputAdornment, Typography, DialogActions, Button } from '@mui/material';
 import { ShoppingBag as ShoppingBagIcon, AttachMoney as AttachMoneyIcon, Link as LinkIcon } from '@mui/icons-material';
@@ -17,18 +18,19 @@ type OrderDialogProps = {
   onSubmit: () => void;
 };
 
-export default function OrderDialog({//解收父元件傳來的屬性
-  open,
-  isEditMode,
-  item,
-  setItem,
-  amount,
-  setAmount,
-  url,  // 新增
-  setUrl,  // 新增
-  error,
-  onClose,
-  onSubmit,
+// OrderDialog 元件：彈出式對話框，編輯/新增訂單
+export default function OrderDialog({
+  open,           // 是否開啟對話框
+  isEditMode,     // true: 編輯模式，false: 新增模式
+  item,           // 商品名稱
+  setItem,        // 設定商品名稱
+  amount,         // 金額
+  setAmount,      // 設定金額
+  url,            // 商品連結
+  setUrl,         // 設定商品連結
+  error,          // 錯誤訊息
+  onClose,        // 關閉對話框
+  onSubmit,       // 送出表單
 }: OrderDialogProps) {
   return (
     <Dialog
@@ -38,17 +40,19 @@ export default function OrderDialog({//解收父元件傳來的屬性
         sx: { borderRadius: 4, width: '100%', maxWidth: 400, p: 1 },
       }}
     >
+      {/* 標題：根據模式顯示不同文字 */}
       <DialogTitle sx={{ fontWeight: 700, textAlign: 'center', pt: 3 }}>
         {isEditMode ? '✏️ 編輯訂單' : '✨ 新增訂單'}
       </DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
+          {/* 商品名稱輸入欄位 */}
           <TextField
             fullWidth
             label="商品名稱"
             placeholder="例如：機械鍵盤"
             value={item}
-            onChange={(e) => setItem(e.target.value)}
+            onChange={(e) => setItem(e.target.value)}//更新商品名稱狀態
             variant="outlined"
             InputProps={{
               startAdornment: (
@@ -59,13 +63,14 @@ export default function OrderDialog({//解收父元件傳來的屬性
             }}
             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
           />
+          {/* 金額輸入欄位 */}
           <TextField
             fullWidth
             label="金額"
             placeholder="0"
             type="number"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => setAmount(e.target.value)}//更新金額狀態
             variant="outlined"
             InputProps={{
               startAdornment: (
@@ -76,13 +81,13 @@ export default function OrderDialog({//解收父元件傳來的屬性
             }}
             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
           />
-          {/* 新增 URL 輸入欄位 */}
+          {/* 商品連結輸入欄位（選填） */}
           <TextField
             fullWidth
             label="商品連結"
             placeholder="https://www.momoshop.com.tw/..."
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => setUrl(e.target.value)}//更新商品連結狀態
             variant="outlined"
             helperText="選填：輸入商品詳情頁面的完整網址"
             InputProps={{
@@ -94,6 +99,7 @@ export default function OrderDialog({//解收父元件傳來的屬性
             }}
             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
           />
+          {/* 錯誤訊息顯示區塊 */}
           {error && (
             <Typography color="error" variant="body2" align="center" sx={{ bgcolor: '#fee2e2', p: 1, borderRadius: 2 }}>
               {error}
@@ -101,13 +107,14 @@ export default function OrderDialog({//解收父元件傳來的屬性
           )}
         </Stack>
       </DialogContent>
+      {/* 底部操作按鈕 */}
       <DialogActions sx={{ pb: 3, px: 3, justifyContent: 'center' }}>
         <Button onClick={onClose} sx={{ color: '#94a3b8', borderRadius: 2, px: 3 }}>
           取消
         </Button>
         <Button
           variant="contained"
-          onClick={onSubmit}
+          onClick={onSubmit}// 點擊送出表單
           sx={{
             borderRadius: 2,
             px: 4,
