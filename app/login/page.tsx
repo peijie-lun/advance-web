@@ -1,8 +1,11 @@
-'use client';
-
+'use client'; // Next.js 前端元件（Client Component）宣告
+//登入頁面」，主要功能是讓用戶輸入 Email 和密碼登入。
+// React hooks
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient'; // 確保你的路徑正確
+// Supabase 客戶端
+import { supabase } from '@/lib/supabaseClient';
+// MUI 元件
 import {
   Container,
   TextField,
@@ -16,6 +19,7 @@ import {
   Stack,
   Fade,
 } from '@mui/material';
+// MUI Icons
 import {
   LockOutlined as LockOutlinedIcon,
   Email as EmailIcon,
@@ -23,20 +27,25 @@ import {
   Login as LoginIcon,
 } from '@mui/icons-material';
 
+// 登入頁主元件
 export default function LoginPage() {
+  // 狀態管理：Email、密碼、載入狀態
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // 處理登入流程
   const handleLogin = async () => {
+    // 檢查必填欄位
     if (!email || !password) {
       alert('請輸入 Email 與密碼');
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // 呼叫 Supabase 登入 API
+    const { error } = await supabase.auth.signInWithPassword({ email, password });// 呼叫 Supabase 的 signInWithPassword 方法進行登入，傳入 email 和 password
     
     if (error) {
       alert('登入失敗: ' + error.message);
@@ -49,6 +58,7 @@ export default function LoginPage() {
     }
   };
 
+  // UI 結構
   return (
     <Box
       sx={{
@@ -61,6 +71,7 @@ export default function LoginPage() {
         p: 2,
       }}
     >
+      {/* 動畫進場 */}
       <Fade in={true} timeout={800}>
         <Container maxWidth="xs">
           <Paper
@@ -71,13 +82,13 @@ export default function LoginPage() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.08)', // 柔和的陰影
+              boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
               border: '1px solid rgba(255,255,255,0.5)',
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
               backdropFilter: 'blur(10px)',
             }}
           >
-            {/* 🔒 頂部圖示 */}
+            {/* 頂部登入圖示 */}
             <Avatar
               sx={{
                 m: 1,
@@ -91,6 +102,7 @@ export default function LoginPage() {
               <LockOutlinedIcon fontSize="large" />
             </Avatar>
 
+            {/* 標題與副標題 */}
             <Typography component="h1" variant="h5" sx={{ fontWeight: 700, mt: 1, color: '#334155' }}>
               歡迎回來
             </Typography>
@@ -98,8 +110,10 @@ export default function LoginPage() {
               請登入以管理您的訂單
             </Typography>
 
+            {/* 登入表單 */}
             <Box component="form" noValidate sx={{ mt: 1, width: '100%' }}>
               <Stack spacing={2.5}>
+                {/* Email 欄位 */}
                 <TextField
                   fullWidth
                   id="email"
@@ -108,7 +122,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   autoFocus
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}//更新 email 狀態 //e.target.value 使用者輸入的值
                   variant="outlined"
                   InputProps={{
                     startAdornment: (
@@ -122,7 +136,7 @@ export default function LoginPage() {
                     bgcolor: 'white',
                   }}
                 />
-                
+                {/* 密碼欄位 */}
                 <TextField
                   fullWidth
                   name="password"
@@ -131,7 +145,7 @@ export default function LoginPage() {
                   id="password"
                   autoComplete="current-password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}//更新 password 狀態 //e.target.value 使用者輸入的值
                   variant="outlined"
                   InputProps={{
                     startAdornment: (
@@ -147,11 +161,12 @@ export default function LoginPage() {
                 />
               </Stack>
 
+              {/* 登入按鈕 */}
               <Button
                 fullWidth
                 variant="contained"
-                onClick={handleLogin}
-                disabled={loading}
+                onClick={handleLogin}// 點擊時觸發登入流程
+                disabled={loading}// 載入中禁用按鈕
                 startIcon={!loading && <LoginIcon />}
                 sx={{
                   mt: 4,
@@ -172,8 +187,8 @@ export default function LoginPage() {
               >
                 {loading ? '登入中...' : '登入'}
               </Button>
-              
-              {/* 底部連結 (選用) */}
+
+              {/* 底部連結（忘記密碼） */}
               <Box sx={{ textAlign: 'center', mt: 1 }}>
                 <Link href="#" variant="body2" sx={{ color: '#64748b', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                   忘記密碼？
@@ -181,7 +196,8 @@ export default function LoginPage() {
               </Box>
             </Box>
           </Paper>
-          
+
+          {/* 頁腳版權宣告 */}
           <Typography variant="caption" display="block" align="center" sx={{ mt: 4, color: '#94a3b8' }}>
             © {new Date().getFullYear()} Order Management System
           </Typography>
