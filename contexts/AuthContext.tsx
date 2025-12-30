@@ -59,7 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('id', session.user.id)
             .single();
           
-          setRole(profile?.role ?? 'user');//預設為 'user' //當用戶登出時，重設 role 為 'user'
+          setRole(profile?.role ?? 'user');//預設為 'user' //當用戶登出時，重設 role 為 'user' //profile?.role：如果有查到 profile（用戶資料），就取出其中的 role 欄位（例如 'admin' 或 'user'）。
+// ?? 'user'：如果 profile 或 role 是 undefined，就預設為 'user'。
         } else {
           setRole('user');
         }
@@ -67,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => subscription.unsubscribe();// 清除監聽器
   }, []);
 
   const signOut = async () => {
@@ -84,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext);// 取得 AuthContext 的值
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
