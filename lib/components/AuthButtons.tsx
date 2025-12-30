@@ -18,7 +18,7 @@ export default function AuthButtons() {
       {/* ⬜ Outline 登入按鈕 - 高級淡灰 */}
       <Button
         variant="outlined"
-        onClick={() => router.push('/login')}
+        onClick={() => router.push('/login')}// 點擊後導向登入頁面
         sx={{
           borderRadius: 50,
           px: 3,
@@ -45,7 +45,7 @@ export default function AuthButtons() {
       <Button
         variant="contained"
         color="primary"
-        onClick={() => router.push('/register')}
+        onClick={() => router.push('/register')}// 點擊後導向註冊頁面
         sx={{
           borderRadius: 50,
           px: 3.5,

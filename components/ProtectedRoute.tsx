@@ -15,11 +15,11 @@ export default function ProtectedRoute({
   children,
   allowedRoles = [],
   redirectTo = '/login',
-}: ProtectedRouteProps) {
+}: ProtectedRouteProps) {// ProtectedRoute 元件用於保護路由，根據使用者的登入狀態和角色來決定是否允許訪問
   const { user, role, loading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
+  useEffect(() => {// 當 user、role 或 loading 狀態改變時觸發
     if (!loading) {
       // 如果沒有登入，重定向到登入頁
       if (!user) {

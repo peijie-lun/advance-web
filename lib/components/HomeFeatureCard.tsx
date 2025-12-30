@@ -12,7 +12,7 @@ export default function HomeFeatureCard({
 }: {
   label: string;
   href: string;
-  onNavigate: (href: string) => void;
+  onNavigate: (href: string) => void;// 點擊卡片時的導向函式
 }) {
   const theme = useTheme();
 

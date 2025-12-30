@@ -4,7 +4,7 @@ import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { User } from '@supabase/supabase-js';
 
-export default function HomeHeader({ user }: { user: User | null }) {
+export default function HomeHeader({ user }: { user: User | null }) {// 接收一個 user 物件，可能為 null 
   const theme = useTheme();
 
   return (

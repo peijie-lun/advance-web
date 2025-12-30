@@ -5,7 +5,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import { useTheme } from '@mui/material/styles';
 
-export default function HomeFeatureCard({
+export default function HomeFeatureCard({//接收一個物件參數（props），包含三個欄位
   label,
   href,
   onNavigate,
@@ -37,7 +37,7 @@ export default function HomeFeatureCard({
           boxShadow: '0 12px 28px rgba(95,139,185,0.18)',
         },
       }}
-      onClick={() => onNavigate(href)}
+      onClick={() => onNavigate(href)}//整張卡片都能點擊 // 點擊卡片時會呼叫 onNavigate 函式，並傳入 href 作為參數
     >
       <CardContent
         sx={{
@@ -89,8 +89,8 @@ export default function HomeFeatureCard({
         <Button
           variant="contained"
           endIcon={<ArrowForwardIcon />}
-          onClick={(e) => {
-            e.stopPropagation();
+          onClick={(e) => {// 點擊按鈕時的事件處理函式
+            e.stopPropagation();// 阻止事件冒泡，避免觸發 Card 的 onClick
             onNavigate(href);
           }}
           sx={{
