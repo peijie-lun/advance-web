@@ -1,7 +1,7 @@
 // components/OrderDialog.tsx
 import React from 'react';
 import { Dialog, DialogTitle, DialogContent, Stack, TextField, InputAdornment, Typography, DialogActions, Button } from '@mui/material';
-import { ShoppingBag as ShoppingBagIcon, AttachMoney as AttachMoneyIcon } from '@mui/icons-material';
+import { ShoppingBag as ShoppingBagIcon, AttachMoney as AttachMoneyIcon, Link as LinkIcon } from '@mui/icons-material';
 
 type OrderDialogProps = {
   open: boolean;
@@ -10,18 +10,22 @@ type OrderDialogProps = {
   setItem: (value: string) => void;
   amount: string;
   setAmount: (value: string) => void;
+  url: string;  // 新增
+  setUrl: (value: string) => void;  // 新增
   error: string | null;
   onClose: () => void;
   onSubmit: () => void;
 };
 
-export default function OrderDialog({
+export default function OrderDialog({//解收父元件傳來的屬性
   open,
   isEditMode,
   item,
   setItem,
   amount,
   setAmount,
+  url,  // 新增
+  setUrl,  // 新增
   error,
   onClose,
   onSubmit,
@@ -67,6 +71,24 @@ export default function OrderDialog({
               startAdornment: (
                 <InputAdornment position="start">
                   <AttachMoneyIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+          />
+          {/* 新增 URL 輸入欄位 */}
+          <TextField
+            fullWidth
+            label="商品連結"
+            placeholder="https://www.momoshop.com.tw/..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            variant="outlined"
+            helperText="選填：輸入商品詳情頁面的完整網址"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <LinkIcon color="action" />
                 </InputAdornment>
               ),
             }}

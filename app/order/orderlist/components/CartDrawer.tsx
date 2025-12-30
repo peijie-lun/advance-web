@@ -80,11 +80,11 @@ export default function CartDrawer({ userId, onClose }: CartDrawerProps) {
         setLoading(false);
         return;
       }
-      const response = await fetch('/api/orders', {
+      const response = await fetch('/api/orders', {//呼叫建立訂單的 API
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          'Authorization': `Bearer ${accessToken}`//將 token 放在 Authorization header
         },
       });
 

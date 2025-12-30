@@ -87,9 +87,9 @@ export async function PATCH(
     const { id } = await params;
 
     // 1. 從 header 取得 access token
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    const supabase = getSupabaseWithAuth(token);
+    const authHeader = request.headers.get('authorization');//從請求的 header 中取得授權資訊
+    const token = authHeader?.replace('Bearer ', '');//從授權資訊中取出 token
+    const supabase = getSupabaseWithAuth(token);//使用 token 建立一個帶有授權的 Supabase 客戶端
 
     // 2. 驗證使用者
     const { data: { user }, error: authError } = await supabase.auth.getUser();

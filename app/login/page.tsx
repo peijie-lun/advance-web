@@ -44,7 +44,7 @@ export default function LoginPage() {
     } else {
       // 登入成功後稍微延遲跳轉，讓使用者感覺順暢
       setTimeout(() => {
-        router.push('/order/orderlist'); 
+        router.push('/'); 
       }, 500);
     }
   };
